@@ -1,22 +1,20 @@
 {
  "date": "2026-07-08",
- "composite": 73.80952380952381,
+ "composite": 47.70431582535457,
  "zone": "neutral",
  "indicators": [
   {
    "id": "pe",
-   "name": "大盤本益比",
+   "name": "個股本益比中位數",
    "invert": false,
-   "cadence": "monthly",
    "value": null,
    "score": null,
    "updated": null
   },
   {
    "id": "dividend_yield",
-   "name": "大盤殖利率",
+   "name": "個股殖利率中位數",
    "invert": true,
-   "cadence": "monthly",
    "value": null,
    "score": null,
    "updated": null
@@ -25,55 +23,49 @@
    "id": "margin_roc20",
    "name": "融資餘額20日增減",
    "invert": false,
-   "cadence": "daily",
-   "value": null,
-   "score": null,
-   "updated": null
+   "value": 7.817179264082591,
+   "score": 69.29223744292237,
+   "updated": "2026-07-07"
   },
   {
    "id": "foreign_net_oi",
    "name": "外資台指期淨部位",
    "invert": false,
-   "cadence": "daily",
    "value": -80042.0,
-   "score": 50.0,
+   "score": 0.5230125523012552,
    "updated": "2026-07-07"
   },
   {
    "id": "pc_oi_ratio",
    "name": "Put/Call未平倉比",
    "invert": true,
-   "cadence": "daily",
    "value": 98.68,
-   "score": 97.61904761904762,
+   "score": 67.45867768595042,
    "updated": "2026-07-07"
   },
   {
-   "id": "vix",
-   "name": "台指VIX",
+   "id": "vol20",
+   "name": "大盤20日波動率",
    "invert": true,
-   "cadence": "daily",
-   "value": null,
-   "score": null,
-   "updated": null
+   "value": 30.938526302699987,
+   "score": 12.639109697933222,
+   "updated": "2026-07-07"
   },
   {
    "id": "bias_240",
    "name": "大盤年線乖離率",
    "invert": false,
-   "cadence": "daily",
-   "value": null,
-   "score": null,
-   "updated": null
+   "value": 55.05409620418747,
+   "score": 98.65853658536585,
+   "updated": "2026-07-07"
   },
   {
    "id": "breadth_ma20",
    "name": "漲跌家數比(20日)",
    "invert": false,
-   "cadence": "daily",
-   "value": null,
-   "score": null,
-   "updated": null
+   "value": 0.4678334042043926,
+   "score": 37.65432098765432,
+   "updated": "2026-07-07"
   }
  ]
 }
