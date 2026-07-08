@@ -73,3 +73,32 @@ def test_parse_fut_contracts_csv_picks_tx_foreign_net_oi():
 
     series = parse_fut_contracts_csv(load_csv("fut_contracts_down.csv"))
     assert ("2026-06-25", -81051.0) in series
+
+
+def test_parse_taiex_ohlc_returns_daily_bars():
+    from collector.fetchers import parse_taiex_ohlc
+
+    bars = parse_taiex_ohlc(load("taiex_ohlc.json"))
+    assert bars[0] == ("2026-07-01", 46234.70, 47293.10, 46234.70, 47018.99)
+
+
+def test_parse_tpex_ohlc_returns_daily_bars():
+    from collector.fetchers import parse_tpex_ohlc
+
+    bars = parse_tpex_ohlc(load("tpex_index.json"))
+    assert bars[0] == ("2026-07-01", 430.29, 437.56, 430.29, 431.23)
+
+
+def test_parse_tpex_highlight_returns_close_and_volume():
+    from collector.fetchers import parse_tpex_highlight
+
+    date, close, volume = parse_tpex_highlight(load("tpex_highlight.json"))
+    assert date == "2026-07-07"
+    assert close == 419.47
+    assert volume == 278_133  # 佰萬元
+
+def test_parse_taiex_volumes_from_fmtqik():
+    from collector.fetchers import parse_taiex_volumes
+
+    vols = parse_taiex_volumes(load("fmtqik.json"))
+    assert vols[0] == ("2026-07-01", 1_367_817_795_171.0)

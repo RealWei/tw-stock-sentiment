@@ -1,0 +1,44 @@
+name: daily-collect
+
+on:
+  schedule:
+    # 台北 22:30（UTC 14:30），週一至週五；融資餘額約 21:00 後公布
+    - cron: "30 14 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: 收集資料並計分
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m collector.collect_daily
+
+      - name: Commit 更新的資料
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ docs/data/
+          if git diff --cached --quiet; then
+            echo "無資料變更"
+          else
+            git commit -m "data: $(date +%Y-%m-%d)"
+            git push
+          fi

@@ -103,6 +103,78 @@ def fetch_taiex_closes(date_yyyymmdd):
     return parse_taiex_closes(payload)
 
 
+# ---- 加權指數 OHLC 與成交值、櫃買指數 OHLC / 收盤 / 成交值 ----
+
+def parse_taiex_ohlc(payload):
+    """回傳該月 [(iso_date, open, high, low, close), ...]。"""
+    fields = payload["fields"]
+    idx = [fields.index(k) for k in ("日期", "開盤指數", "最高指數", "最低指數", "收盤指數")]
+    return [
+        (_roc_to_iso(row[idx[0]]), *(_num(row[i]) for i in idx[1:]))
+        for row in payload["data"]
+    ]
+
+
+def fetch_taiex_ohlc(date_yyyymmdd):
+    payload = _get_json(
+        f"{TWSE}/TAIEX/MI_5MINS_HIST",
+        {"date": date_yyyymmdd, "response": "json"},
+    )
+    if payload.get("stat") != "OK":
+        return []
+    return parse_taiex_ohlc(payload)
+
+
+def parse_taiex_volumes(payload):
+    """FMTQIK → 該月 [(iso_date, 成交金額元), ...]。"""
+    fields = payload["fields"]
+    date_idx = fields.index("日期")
+    amt_idx = fields.index("成交金額")
+    return [
+        (_roc_to_iso(row[date_idx]), _num(row[amt_idx]))
+        for row in payload["data"]
+    ]
+
+
+def parse_tpex_ohlc(payload):
+    """TPEX openapi tpex_index（當月）→ [(iso_date, o, h, l, c), ...]。"""
+    return [
+        (
+            _roc_to_iso(row["Date"]),
+            _num(row["Open"]),
+            _num(row["High"]),
+            _num(row["Low"]),
+            _num(row["Close"]),
+        )
+        for row in payload
+    ]
+
+
+def fetch_tpex_ohlc():
+    return parse_tpex_ohlc(_get_json("https://www.tpex.org.tw/openapi/v1/tpex_index"))
+
+
+def parse_tpex_highlight(payload):
+    """TPEX highlight（單日彙總）→ (iso_date, 收市指數, 總成交值佰萬元)。"""
+    date = payload["date"]
+    iso = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    table = payload["tables"][0]
+    row = dict(zip(table["fields"], table["data"][0]))
+    return iso, _num(row["收市指數"]), _num(row["本日總成交值(佰萬元)"])
+
+
+def fetch_tpex_highlight(date_slash):
+    """date_slash 格式 YYYY/MM/DD。非交易日回傳 None。"""
+    payload = _get_json(
+        "https://www.tpex.org.tw/www/zh-tw/afterTrading/highlight",
+        {"date": date_slash, "response": "json"},
+    )
+    tables = payload.get("tables") or [{}]
+    if not tables[0].get("data"):
+        return None
+    return parse_tpex_highlight(payload)
+
+
 # ---- 台指選擇權 Put/Call 未平倉比（TAIFEX OpenAPI） ----
 
 def parse_put_call_oi_ratio(payload):
