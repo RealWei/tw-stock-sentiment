@@ -30,6 +30,8 @@ def notification_message(snapshot):
         + ("過熱" if snapshot["zone"] == "overheat" else "過冷" if snapshot["zone"] == "cold" else "中性"),
         ZONE_TEXT[snapshot["zone"]],
     ]
+    if snapshot.get("greed") is not None and snapshot.get("fear") is not None:
+        lines.insert(2, f"過熱計 {snapshot['greed']:.0f}（≥80 過熱）／恐慌計 {snapshot['fear']:.0f}（≤15 過冷）")
 
     extremes = []
     for ind_id, score in snapshot["scores"].items():

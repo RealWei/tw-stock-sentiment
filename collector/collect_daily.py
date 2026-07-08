@@ -12,6 +12,9 @@ from collector.pipeline import (
     composite_series,
     daily_snapshot,
     derive_indicator_series,
+    dual_meters,
+    meters_series,
+    zone_from_meters,
 )
 from collector.signals import scan_market, support_resistance
 from collector.storage import load_history, upsert
@@ -163,6 +166,8 @@ def write_outputs(snapshot, derived):
     latest = {
         "date": snapshot["date"],
         "composite": snapshot["composite"],
+        "greed": snapshot.get("greed"),
+        "fear": snapshot.get("fear"),
         "zone": snapshot["zone"],
         "indicators": [
             {
@@ -182,6 +187,7 @@ def write_outputs(snapshot, derived):
 
     series = {
         "composite": composite_series(derived),
+        "meters": meters_series(derived),
         "indicators": {
             ind_id: derived.get(ind_id, []) for ind_id in INDICATORS
         },
@@ -207,8 +213,16 @@ def main():
         sys.exit(1)
 
     derived = derive_indicator_series(raw)
-    snapshot = daily_snapshot(derived, now.strftime("%Y-%m-%d"))
+    as_of = now.strftime("%Y-%m-%d")
+    snapshot = daily_snapshot(derived, as_of)
+    greed, fear = dual_meters(derived, as_of)
+    snapshot["greed"], snapshot["fear"] = greed, fear
+    meter_zone = zone_from_meters(greed, fear)
+    if meter_zone is not None:  # 雙計優先，資料不足時退回總分燈號
+        snapshot["zone"] = meter_zone
     write_outputs(snapshot, derived)
+    if greed is not None and fear is not None:
+        print(f"過熱計 {greed:.0f} / 恐慌計 {fear:.0f}")
 
     signal_report = build_signal_report(raw)
     (DOCS_DATA / "signals.json").write_text(

@@ -69,6 +69,10 @@ h1 { font-size: 20px; font-weight: 650; }
 .zone-overheat { color: var(--hot); }
 .zone-cold { color: var(--cold); }
 .zone-neutral { color: var(--text-secondary); }
+#hero-meters { display: flex; gap: 20px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+#hero-meters b { font-size: 18px; font-weight: 650; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+#hero-meters b.alert-hot { color: var(--hot); }
+#hero-meters b.alert-cold { color: var(--cold); }
 /* 指標卡 */
 #cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-bottom: 24px; }
 .ind-label { font-size: 13px; color: var(--text-secondary); }
@@ -143,6 +147,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <div id="hero-score">–</div>
     <div id="hero-zone"></div>
     <div id="hero-advice"></div>
+    <div id="hero-meters"></div>
   </div>
 </div>
 
@@ -178,8 +183,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 </div>
 
 <footer>
-  各指標以近三年歷史百分位轉為 0-100 分（越高越樂觀），等權平均為總分；≥80 過熱、≤20 過冷。<br>
-  資料來源：臺灣證券交易所、臺灣期貨交易所公開資料，每個交易日晚間自動更新。本頁僅供參考，非投資建議。
+  各指標以近三年歷史百分位轉為 0-100 分（越高越樂觀），等權平均為總分（儀表顯示用）。<br>
+  燈號改由回測選組的單邊指標決定：<b>過熱計</b>（外資期貨、融資增速、年線乖離、P/C 比）≥80 提醒減碼；
+  <b>恐慌計</b>（波動率、估值、融資增速、漲跌家數、P/C 比）≤15 提醒加碼；各指標取近 5 日最極端分數對齊。<br>
+  資料來源：臺灣證券交易所、臺灣期貨交易所、櫃買中心公開資料，每個交易日晚間自動更新。本頁僅供參考，非投資建議。
 </footer>
 
 <script>
@@ -363,9 +370,8 @@ function renderLineChart(container, points, opts) {
   const Y = v => m.t + (1 - (v - yMin) / (yMax - yMin)) * ih;
 
   let bands = "";
-  if (opts.zoneBands) {
-    bands = `<rect x="${m.l}" y="${Y(100)}" width="${iw}" height="${Y(80) - Y(100)}" fill="var(--hot-wash)"/>
-      <rect x="${m.l}" y="${Y(20)}" width="${iw}" height="${Y(0) - Y(20)}" fill="var(--cold-wash)"/>`;
+  for (const b of opts.bands || []) {
+    bands += `<rect x="${m.l}" y="${Y(b.to)}" width="${iw}" height="${Y(b.from) - Y(b.to)}" fill="${b.fill}"/>`;
   }
 
   const nTicks = 4;
@@ -447,14 +453,37 @@ function clip(points) {
   return points.filter(p => p[0] >= iso);
 }
 
+const ZONE_BANDS = [
+  { from: 80, to: 100, fill: "var(--hot-wash)" },
+  { from: 0, to: 20, fill: "var(--cold-wash)" },
+];
+const METER_OPTS = {
+  meter_greed: { name: "過熱計", col: 1, bands: [{ from: 80, to: 100, fill: "var(--hot-wash)" }] },
+  meter_fear:  { name: "恐慌計", col: 2, bands: [{ from: 0, to: 15, fill: "var(--cold-wash)" }] },
+};
+
 function renderCharts() {
   if (!seriesData) return;
   renderLineChart(el("composite-chart"), clip(seriesData.composite), {
     color: "var(--accent)",
-    zoneBands: true, yMin: 0, yMax: 100,
+    bands: ZONE_BANDS, yMin: 0, yMax: 100,
     tickFmt: v => Math.round(v),
     valueFmt: v => v.toFixed(1) + " 分",
   });
+  const meter = METER_OPTS[currentInd];
+  if (meter) {
+    el("ind-chart-title").textContent = meter.name + "走勢";
+    const pts = (seriesData.meters || [])
+      .filter(r => r[meter.col] != null)
+      .map(r => [r[0], r[meter.col]]);
+    renderLineChart(el("indicator-chart"), clip(pts), {
+      color: "var(--accent)",
+      bands: meter.bands, yMin: 0, yMax: 100,
+      tickFmt: v => Math.round(v),
+      valueFmt: v => v.toFixed(1) + " 分",
+    });
+    return;
+  }
   const ind = (latestData?.indicators || []).find(i => i.id === currentInd);
   el("ind-chart-title").textContent = (ind ? ind.name : "指標") + "走勢";
   renderLineChart(el("indicator-chart"), clip(seriesData.indicators[currentInd] || []), {
@@ -527,10 +556,31 @@ async function init() {
   zoneEl.className = "zone-" + (latest.zone || "neutral");
   el("hero-advice").textContent = latest.zone ? zoneAdvice(latest.zone) : "";
 
+  if (latest.greed != null && latest.fear != null) {
+    const meters = el("hero-meters");
+    for (const [label, val, alertCls, hit] of [
+      ["過熱計（≥80 減碼警戒）", latest.greed, "alert-hot", latest.greed >= 80],
+      ["恐慌計（≤15 加碼機會）", latest.fear, "alert-cold", latest.fear <= 15],
+    ]) {
+      const span = document.createElement("span");
+      const b = document.createElement("b");
+      b.textContent = Math.round(val);
+      if (hit) b.className = alertCls;
+      span.append(b, document.createTextNode(" " + label));
+      meters.appendChild(span);
+    }
+  }
+
   renderCards(latest);
   if (signals) renderSignals(signals);
 
   const sel = el("ind-select");
+  for (const [id, m] of Object.entries(METER_OPTS)) {
+    const o = document.createElement("option");
+    o.value = id;
+    o.textContent = m.name;
+    sel.appendChild(o);
+  }
   for (const ind of latest.indicators) {
     const o = document.createElement("option");
     o.value = ind.id;

@@ -105,6 +105,64 @@ def daily_snapshot(derived, as_of):
     }
 
 
+# 依 2024-08 ~ 2026-07 波段回測選出的單邊指標組（詳見 README 權重分析）：
+# 高點常見極端：外資期貨、融資增速、年線乖離、P/C 比
+# 低點常見極端：波動率（最可靠）、估值、融資增速、漲跌家數、P/C 比
+GREED_GROUP = ("foreign_net_oi", "margin_roc20", "bias_240", "pc_oi_ratio")
+FEAR_GROUP = ("vol20", "pe", "dividend_yield", "margin_roc20", "breadth_ma20", "pc_oi_ratio")
+METER_ALIGN_DAYS = 5   # 各指標極端值常在轉折窗內不同天出現，取近 N 日最極端對齊
+MIN_GROUP_SIZE = 3
+OVERHEAT_METER = 80.0
+COLD_METER = 15.0
+
+
+def _side(snaps, group, pick):
+    """對一組每日 scores dict 取各指標的極端值後平均。"""
+    vals = []
+    for ind in group:
+        xs = [s.get(ind) for s in snaps if s.get(ind) is not None]
+        if xs:
+            vals.append(pick(xs))
+    if len(vals) < MIN_GROUP_SIZE:
+        return None
+    return sum(vals) / len(vals)
+
+
+def dual_meters(derived, as_of, align_days=METER_ALIGN_DAYS):
+    """回傳 (過熱計, 恐慌計)：單邊指標組取近 N 日最極端分數的平均。"""
+    all_dates = sorted({d for s in derived.values() for d, _ in s if d <= as_of})
+    window = all_dates[-align_days:]
+    if not window:
+        return None, None
+    snaps = [daily_snapshot(derived, d)["scores"] for d in window]
+    return _side(snaps, GREED_GROUP, max), _side(snaps, FEAR_GROUP, min)
+
+
+def zone_from_meters(greed, fear):
+    """恐慌優先：崩盤期常伴隨部分過熱指標殘留高分。"""
+    if fear is not None and fear <= COLD_METER:
+        return "cold"
+    if greed is not None and greed >= OVERHEAT_METER:
+        return "overheat"
+    if greed is None and fear is None:
+        return None
+    return "neutral"
+
+
+def meters_series(derived):
+    """全期間每日 (date, 過熱計, 恐慌計)，供走勢圖。"""
+    all_dates = sorted({d for s in derived.values() for d, _ in s})
+    scores_by_date = {d: daily_snapshot(derived, d)["scores"] for d in all_dates}
+    out = []
+    for i, d in enumerate(all_dates):
+        snaps = [scores_by_date[w] for w in all_dates[max(0, i - METER_ALIGN_DAYS + 1) : i + 1]]
+        greed = _side(snaps, GREED_GROUP, max)
+        fear = _side(snaps, FEAR_GROUP, min)
+        if greed is not None or fear is not None:
+            out.append((d, greed, fear))
+    return out
+
+
 def composite_series(derived):
     """對每個出現過的交易日算總分，回傳 [(date, composite)]，供走勢圖用。"""
     all_dates = sorted({d for series in derived.values() for d, _ in series})

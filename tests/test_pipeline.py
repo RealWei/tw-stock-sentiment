@@ -72,3 +72,40 @@ class TestCompositeSeries:
         assert [d for d, _ in series] == dates
         # 遞增序列 → 最後一天分數最高（invert=True 的 P/C 比會反轉 → 最低）
         assert series[-1][1] < series[0][1]
+
+
+class TestDualMeters:
+    def test_meters_align_staggered_extremes_within_5_days(self):
+        from collector.pipeline import dual_meters
+
+        dates = [f"2026-{m:02d}-{d:02d}" for m in range(1, 7) for d in range(1, 29)]
+        n = len(dates)
+        # 過熱組指標各自在最後 5 天內「不同天」創極端（新高或反向指標新低）
+        derived = {}
+        for k, ind in enumerate(["foreign_net_oi", "margin_roc20", "bias_240", "pc_oi_ratio"]):
+            sign = -1.0 if ind == "pc_oi_ratio" else 1.0  # 反向指標用遞減
+            vals = [sign * float(i) for i in range(n)]
+            vals[-1 - k] = sign * float(n + 10)  # 極端日錯開在最後 5 天內
+            vals[-1] = vals[-1] if k == 0 else sign * float(n - 30)  # 當天本身不極端
+            derived[ind] = list(zip(dates, vals))
+        greed, fear = dual_meters(derived, dates[-1])
+        assert greed is not None and greed > 90
+
+    def test_meters_need_at_least_3_indicators(self):
+        from collector.pipeline import dual_meters
+
+        dates = [f"2026-01-{d:02d}" for d in range(1, 29)]
+        derived = {"vol20": [(d, 1.0) for d in dates]}
+        greed, fear = dual_meters(derived, dates[-1])
+        assert greed is None
+        assert fear is None
+
+    def test_zone_from_meters(self):
+        from collector.pipeline import zone_from_meters
+
+        assert zone_from_meters(85.0, 50.0) == "overheat"
+        assert zone_from_meters(50.0, 10.0) == "cold"
+        assert zone_from_meters(50.0, 50.0) == "neutral"
+        assert zone_from_meters(None, None) is None
+        # 兩邊同時極端 → 恐慌優先（避免高波動期誤報過熱）
+        assert zone_from_meters(85.0, 10.0) == "cold"
