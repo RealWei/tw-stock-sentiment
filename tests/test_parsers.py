@@ -44,3 +44,32 @@ def test_parse_foreign_futures_net_oi_picks_tx_foreign():
     date, net = parse_foreign_futures_net_oi(load("fut_inst.json"))
     assert date == "2026-07-07"
     assert net == -80042
+
+
+def test_parse_pe_yield_medians_skips_non_numeric():
+    from collector.fetchers import parse_pe_yield_medians
+
+    date, pe, dy = parse_pe_yield_medians(load("bwibbu_d.json"))
+    assert date == "2026-07-07"
+    # fixture 前 12 檔中台泥本益比為 '-'，需排除後取中位數
+    assert pe > 0
+    assert dy > 0
+
+
+def load_csv(name):
+    return (FIXTURES / name).read_text()
+
+
+def test_parse_pc_ratio_csv_takes_oi_ratio_column():
+    from collector.bootstrap import parse_pc_ratio_csv
+
+    series = parse_pc_ratio_csv(load_csv("pc_ratio_down.csv"))
+    assert ("2026-06-30", 134.93) in series
+    assert len(series) == 21  # 22 行含表頭
+
+
+def test_parse_fut_contracts_csv_picks_tx_foreign_net_oi():
+    from collector.bootstrap import parse_fut_contracts_csv
+
+    series = parse_fut_contracts_csv(load_csv("fut_contracts_down.csv"))
+    assert ("2026-06-25", -81051.0) in series

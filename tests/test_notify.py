@@ -26,8 +26,8 @@ class TestNotificationMessage:
             "date": "2026-07-08",
             "composite": 85.2,
             "zone": "overheat",
-            "scores": {"bias_240": 97.0, "vix": 60.0},
-            "values": {"bias_240": 15.3, "vix": 18.0},
+            "scores": {"bias_240": 97.0, "vol20": 60.0},
+            "values": {"bias_240": 15.3, "vol20": 18.0},
         }
         msg = notification_message(snap)
         assert "過熱" in msg
@@ -41,10 +41,10 @@ class TestNotificationMessage:
             "date": "2026-07-08",
             "composite": 12.0,
             "zone": "cold",
-            "scores": {"vix": 3.0},
-            "values": {"vix": 45.0},
+            "scores": {"vol20": 3.0},
+            "values": {"vol20": 45.0},
         }
         msg = notification_message(snap)
         assert "過冷" in msg
         assert "加碼" in msg
-        assert "台指VIX" in msg
+        assert "大盤20日波動率" in msg

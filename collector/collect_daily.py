@@ -57,6 +57,12 @@ def fetch_all(today_yyyymmdd):
     if foreign:
         updates["foreign_net_oi"] = [foreign]
 
+    valuation = attempt("pe_yield", lambda: fetchers.fetch_pe_yield_medians(today_yyyymmdd))
+    if valuation:
+        date, pe, dy = valuation
+        updates["pe"] = [(date, pe)]
+        updates["dividend_yield"] = [(date, dy)]
+
     return updates, failures
 
 
@@ -82,12 +88,11 @@ def write_outputs(snapshot, derived):
                 "id": ind_id,
                 "name": name,
                 "invert": invert,
-                "cadence": cadence,
                 "value": snapshot["values"][ind_id],
                 "score": snapshot["scores"][ind_id],
                 "updated": snapshot["updated"][ind_id],
             }
-            for ind_id, (name, invert, cadence) in INDICATORS.items()
+            for ind_id, (name, invert) in INDICATORS.items()
         ],
     }
     (DOCS_DATA / "latest.json").write_text(

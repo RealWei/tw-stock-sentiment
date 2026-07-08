@@ -117,6 +117,44 @@ def fetch_put_call_oi_ratio():
     return parse_put_call_oi_ratio(_get_json(f"{TAIFEX_API}/PutCallRatio"))
 
 
+# ---- 大盤估值代理：上市個股本益比/殖利率中位數（TWSE BWIBBU_d） ----
+
+def parse_pe_yield_medians(payload):
+    """回傳 (date, 本益比中位數, 殖利率中位數)。'-' 等非數值排除。"""
+    from statistics import median
+
+    date = payload["date"]
+    iso = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    fields = payload["fields"]
+    pe_idx = fields.index("本益比")
+    dy_idx = fields.index("殖利率(%)")
+
+    def numeric(rows, idx):
+        out = []
+        for row in rows:
+            try:
+                out.append(_num(row[idx]))
+            except ValueError:
+                continue
+        return out
+
+    pes = numeric(payload["data"], pe_idx)
+    dys = numeric(payload["data"], dy_idx)
+    if not pes or not dys:
+        raise ValueError("no numeric PE/yield rows")
+    return iso, median(pes), median(dys)
+
+
+def fetch_pe_yield_medians(date_yyyymmdd):
+    payload = _get_json(
+        f"{TWSE}/afterTrading/BWIBBU_d",
+        {"date": date_yyyymmdd, "selectType": "ALL", "response": "json"},
+    )
+    if payload.get("stat") != "OK":
+        return None
+    return parse_pe_yield_medians(payload)
+
+
 # ---- 外資台指期未平倉淨部位（TAIFEX OpenAPI 三大法人） ----
 
 def parse_foreign_futures_net_oi(payload):

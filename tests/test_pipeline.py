@@ -40,18 +40,18 @@ class TestDailySnapshot:
         dates = [f"2025-{m:02d}-01" for m in range(1, 13)] + ["2026-07-08"]
         greed = {  # invert=False，遞增 → 今天是最高 → 100 分
             "bias_240": [(d, i) for i, d in enumerate(dates)],
-            "vix": [(d, 30 - i) for i, d in enumerate(dates)],  # invert=True，遞減 → 也貪婪
+            "vol20": [(d, 30 - i) for i, d in enumerate(dates)],  # invert=True，遞減 → 也貪婪
         }
         snap = daily_snapshot(greed, "2026-07-08")
         assert snap["date"] == "2026-07-08"
         assert snap["scores"]["bias_240"] > 90
-        assert snap["scores"]["vix"] > 90
+        assert snap["scores"]["vol20"] > 90
         assert snap["composite"] > 90
         assert snap["zone"] == "overheat"
 
-    def test_indicator_without_today_value_uses_latest(self):
-        # 月更指標（如 P/E）沿用最近一筆
-        series = {"pe": [("2026-06-01", 25.0), ("2026-05-01", 20.0), ("2026-04-01", 15.0)]}
+    def test_indicator_without_today_value_uses_recent_latest(self):
+        # 當日沒資料但 14 天內有 → 沿用最近一筆（且不受輸入排序影響）
+        series = {"pe": [("2026-07-06", 25.0), ("2026-07-01", 20.0), ("2026-06-20", 15.0)]}
         snap = daily_snapshot(series, "2026-07-08")
         assert snap["values"]["pe"] == 25.0
 
