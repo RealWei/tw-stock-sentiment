@@ -140,10 +140,11 @@ def notify_new_signals(report, state):
             lines.append(
                 f"・{entry['name']}：{e['name']}（{DIRECTION_TEXT[e['direction']]}，{e['date']}）"
             )
-    if lines:
-        send_telegram("📡 技術訊號\n" + "\n".join(lines))
-    # 只保留近 200 筆避免無限成長
-    state["notified_signals"] = (state.get("notified_signals", []) + keys)[-200:]
+    if not lines:
+        return
+    if send_telegram("📡 技術訊號\n" + "\n".join(lines)):
+        # 送達才記錄，未設定/失敗時下次重試；只保留近 200 筆避免無限成長
+        state["notified_signals"] = (state.get("notified_signals", []) + keys)[-200:]
 
 
 def load_state():

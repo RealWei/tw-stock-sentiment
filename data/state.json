@@ -1,4 +1,5 @@
 {
   "zone": "neutral",
-  "consecutive_failures": 0
+  "consecutive_failures": 0,
+  "notified_signals": []
 }

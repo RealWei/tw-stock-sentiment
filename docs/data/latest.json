@@ -1,30 +1,30 @@
 {
  "date": "2026-07-08",
- "composite": 47.70431582535457,
+ "composite": 63.80574150513006,
  "zone": "neutral",
  "indicators": [
   {
    "id": "pe",
    "name": "個股本益比中位數",
    "invert": false,
-   "value": null,
-   "score": null,
-   "updated": null
+   "value": 20.58,
+   "score": 85.78947368421052,
+   "updated": "2026-07-01"
   },
   {
    "id": "dividend_yield",
    "name": "個股殖利率中位數",
    "invert": true,
-   "value": null,
-   "score": null,
-   "updated": null
+   "value": 2.365,
+   "score": 96.3157894736842,
+   "updated": "2026-07-01"
   },
   {
    "id": "margin_roc20",
    "name": "融資餘額20日增減",
    "invert": false,
-   "value": 7.817179264082591,
-   "score": 69.29223744292237,
+   "value": 10.87690161692082,
+   "score": 86.43162393162393,
    "updated": "2026-07-07"
   },
   {
@@ -32,7 +32,7 @@
    "name": "外資台指期淨部位",
    "invert": false,
    "value": -80042.0,
-   "score": 0.5230125523012552,
+   "score": 1.5495867768595042,
    "updated": "2026-07-07"
   },
   {
@@ -47,25 +47,25 @@
    "id": "vol20",
    "name": "大盤20日波動率",
    "invert": true,
-   "value": 30.938526302699987,
-   "score": 12.639109697933222,
+   "value": 32.217093561088575,
+   "score": 12.42977528089888,
    "updated": "2026-07-07"
   },
   {
    "id": "bias_240",
    "name": "大盤年線乖離率",
    "invert": false,
-   "value": 55.05409620418747,
-   "score": 98.65853658536585,
+   "value": 42.82769793855813,
+   "score": 90.77079107505071,
    "updated": "2026-07-07"
   },
   {
    "id": "breadth_ma20",
    "name": "漲跌家數比(20日)",
    "invert": false,
-   "value": 0.4678334042043926,
-   "score": 37.65432098765432,
-   "updated": "2026-07-07"
+   "value": 0.4990794168315338,
+   "score": 69.70021413276231,
+   "updated": "2026-07-08"
   }
  ]
 }

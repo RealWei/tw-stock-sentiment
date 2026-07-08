@@ -5,6 +5,11 @@ on:
     # 台北 22:30（UTC 14:30），週一至週五；融資餘額約 21:00 後公布
     - cron: "30 14 * * 1-5"
   workflow_dispatch:
+    inputs:
+      test_telegram:
+        description: "發送 Telegram 測試訊息"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -24,6 +29,14 @@ jobs:
           python-version: "3.12"
 
       - run: pip install requests
+
+      - name: Telegram 測試訊息
+        if: ${{ inputs.test_telegram }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -c "from collector.notify import send_telegram; import sys; sys.exit(0 if send_telegram('✅ 台股情緒儀表板通知測試成功') else 1)"
 
       - name: 收集資料並計分
         env:
