@@ -112,8 +112,8 @@ def bootstrap_daily_twse(existing, name, fetch, transform):
 
 
 def bootstrap_taifex_csv(name, path, parse, extra_params=None):
-    """以 30 天為一段回補 TAIFEX CSV 資料源。"""
-    end = date.today()
+    """以 30 天為一段回補 TAIFEX CSV 資料源。查詢終點不可含當天，否則回傳錯誤頁。"""
+    end = date.today() - timedelta(days=1)
     start = end - timedelta(days=DAILY_YEARS * 365)
     cursor = start
     while cursor <= end:
@@ -125,7 +125,10 @@ def bootstrap_taifex_csv(name, path, parse, extra_params=None):
         params.update(extra_params or {})
         resp = requests.post(f"{TAIFEX}/{path}", data=params, timeout=30)
         resp.raise_for_status()
-        points = parse(resp.content.decode("big5", errors="replace"))
+        text = resp.content.decode("big5", errors="replace")
+        if text.lstrip().startswith("<"):
+            raise RuntimeError(f"{name} {params['queryStartDate']} 回傳錯誤頁而非 CSV")
+        points = parse(text)
         if points:
             upsert(HISTORY, name, points)
         print(f"  {name} {cursor} ~ {window_end}: {len(points)} 筆")

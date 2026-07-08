@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台股情緒儀表板</title>
+<style>
+:root {
+  --surface-1: #fcfcfb;
+  --page: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --accent: #2a78d6;      /* series-1 藍 */
+  --hot: #e34948;         /* diverging 暖極：過熱 */
+  --cold: #2a78d6;        /* diverging 冷極：過冷 */
+  --mid: #f0efec;         /* diverging 中性 */
+  --hot-wash: rgba(227,73,72,0.08);
+  --cold-wash: rgba(42,120,214,0.08);
+  --tooltip-bg: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-1: #1a1a19;
+    --page: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --accent: #3987e5;
+    --hot: #e66767;
+    --cold: #3987e5;
+    --mid: #383835;
+    --hot-wash: rgba(230,103,103,0.10);
+    --cold-wash: rgba(57,135,229,0.10);
+    --tooltip-bg: #262624;
+  }
+}
+* { box-sizing: border-box; margin: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--page);
+  color: var(--text-primary);
+  padding: 20px 16px 48px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+h1 { font-size: 20px; font-weight: 650; }
+#as-of { color: var(--text-muted); font-size: 13px; }
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+/* 總分區 */
+#hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+#gauge-wrap { flex: 0 0 auto; }
+#hero-text { flex: 1 1 240px; min-width: 220px; }
+#hero-score { font-size: 56px; font-weight: 650; line-height: 1.05; }
+#hero-zone { font-size: 16px; font-weight: 600; margin-top: 4px; }
+#hero-advice { color: var(--text-secondary); font-size: 14px; margin-top: 8px; }
+.zone-overheat { color: var(--hot); }
+.zone-cold { color: var(--cold); }
+.zone-neutral { color: var(--text-secondary); }
+/* 指標卡 */
+#cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.ind-label { font-size: 13px; color: var(--text-secondary); }
+.ind-value { font-size: 22px; font-weight: 600; margin: 4px 0 2px; }
+.ind-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.meter { position: relative; height: 6px; border-radius: 3px; background: var(--mid); }
+.meter .seg { position: absolute; top: 0; height: 100%; }
+.meter .seg.cold { left: 0; width: 20%; background: var(--cold-wash); border-radius: 3px 0 0 3px; }
+.meter .seg.hot { right: 0; width: 20%; background: var(--hot-wash); border-radius: 0 3px 3px 0; }
+.meter .dot {
+  position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--text-primary);
+  border: 2px solid var(--surface-1);
+}
+.meter-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+/* 圖表 */
+.section-title { font-size: 15px; font-weight: 650; margin: 24px 0 10px; }
+#range-row { display: flex; gap: 6px; margin: 0 0 12px; flex-wrap: wrap; }
+#range-row button, #ind-select {
+  font: inherit; font-size: 13px;
+  background: var(--surface-1); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; cursor: pointer;
+}
+#range-row button[aria-pressed="true"] { color: var(--text-primary); font-weight: 650; border-color: var(--baseline); }
+.chart-card { margin-bottom: 16px; }
+.chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.chart-title { font-size: 14px; font-weight: 650; }
+.chart-box { position: relative; }
+.chart-box svg { display: block; width: 100%; height: auto; }
+.tooltip {
+  position: absolute; pointer-events: none; visibility: hidden;
+  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  white-space: nowrap; z-index: 5;
+}
+.tooltip .tt-date { color: var(--text-muted); margin-bottom: 2px; }
+.tooltip .tt-value { font-size: 15px; font-weight: 650; }
+/* 表格 */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--grid); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.num { text-align: right; }
+tr:last-child td { border-bottom: none; }
+footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+#error { color: var(--hot); padding: 12px 0; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>台股情緒儀表板</h1>
+  <span id="as-of"></span>
+</header>
+<div id="error"></div>
+
+<div class="card" id="hero">
+  <div id="gauge-wrap"></div>
+  <div id="hero-text">
+    <div id="hero-score">–</div>
+    <div id="hero-zone"></div>
+    <div id="hero-advice"></div>
+  </div>
+</div>
+
+<div id="cards"></div>
+
+<div class="section-title">走勢</div>
+<div id="range-row" role="group" aria-label="時間範圍"></div>
+
+<div class="card chart-card">
+  <div class="chart-head"><span class="chart-title">情緒總分（0=極度悲觀，100=極度樂觀）</span></div>
+  <div class="chart-box" id="composite-chart"></div>
+</div>
+
+<div class="card chart-card">
+  <div class="chart-head">
+    <span class="chart-title" id="ind-chart-title">指標走勢</span>
+    <select id="ind-select" aria-label="選擇指標"></select>
+  </div>
+  <div class="chart-box" id="indicator-chart"></div>
+</div>
+
+<div class="section-title">指標明細</div>
+<div class="card" style="overflow-x:auto">
+  <table id="detail-table">
+    <thead><tr>
+      <th>指標</th><th class="num">現值</th><th class="num">分數</th><th>方向</th><th>更新日</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<footer>
+  各指標以近三年歷史百分位轉為 0-100 分（越高越樂觀），等權平均為總分；≥80 過熱、≤20 過冷。<br>
+  資料來源：臺灣證券交易所、臺灣期貨交易所公開資料，每個交易日晚間自動更新。本頁僅供參考，非投資建議。
+</footer>
+
+<script>
+"use strict";
+
+const FORMATS = {
+  pe:             v => v.toFixed(1) + " 倍",
+  dividend_yield: v => v.toFixed(2) + " %",
+  margin_roc20:   v => (v >= 0 ? "+" : "") + v.toFixed(2) + " %",
+  foreign_net_oi: v => Math.round(v).toLocaleString() + " 口",
+  pc_oi_ratio:    v => v.toFixed(1) + " %",
+  vol20:          v => v.toFixed(1) + " %",
+  bias_240:       v => (v >= 0 ? "+" : "") + v.toFixed(1) + " %",
+  breadth_ma20:   v => (v * 100).toFixed(1) + " %",
+};
+const fmt = (id, v) => (v == null ? "—" : (FORMATS[id] || (x => x.toFixed(2)))(v));
+
+const RANGES = [["3M", 90], ["6M", 183], ["1Y", 365], ["2Y", 730], ["全部", Infinity]];
+let rangeDays = 365;
+let seriesData = null;
+let latestData = null;
+let currentInd = "bias_240";
+
+const el = id => document.getElementById(id);
+
+function zoneText(zone) {
+  return zone === "overheat" ? "過熱" : zone === "cold" ? "過冷" : "中性";
+}
+function zoneAdvice(zone) {
+  if (zone === "overheat") return "市場情緒過度樂觀，歷史上常對應高檔風險——考慮分批減碼、提高現金比重。";
+  if (zone === "cold") return "市場情緒過度悲觀，歷史上常出現在相對低檔——考慮分批加碼。";
+  return "情緒位於中性區間，按既定計畫操作即可。";
+}
+
+/* ---------- 總分半圓儀表 ---------- */
+function renderGauge(score) {
+  const W = 220, H = 130, cx = W / 2, cy = 115, r = 88;
+  const arc = (a0, a1, color, w) => {
+    const p = a => [cx + r * Math.cos(Math.PI * (1 - a)), cy - r * Math.sin(Math.PI * (1 - a))];
+    const [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `<path d="M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}"
+      fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="butt"/>`;
+  };
+  let needle = "";
+  if (score != null) {
+    const a = score / 100;
+    const nx = cx + (r - 20) * Math.cos(Math.PI * (1 - a));
+    const ny = cy - (r - 20) * Math.sin(Math.PI * (1 - a));
+    needle = `<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}"
+        stroke="var(--text-primary)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="5" fill="var(--text-primary)"/>`;
+  }
+  el("gauge-wrap").innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="情緒總分儀表">
+    ${arc(0, 0.2, "var(--cold)", 10)}${arc(0.205, 0.795, "var(--mid)", 10)}${arc(0.8, 1, "var(--hot)", 10)}
+    <text x="${cx - r - 2}" y="${H - 2}" font-size="10" fill="var(--text-muted)">0</text>
+    <text x="${cx + r - 8}" y="${H - 2}" font-size="10" fill="var(--text-muted)">100</text>
+    ${needle}
+  </svg>`;
+}
+
+/* ---------- 指標卡 ---------- */
+function renderCards(latest) {
+  const wrap = el("cards");
+  wrap.textContent = "";
+  for (const ind of latest.indicators) {
+    const card = document.createElement("div");
+    card.className = "card";
+    const label = document.createElement("div");
+    label.className = "ind-label";
+    label.textContent = ind.name;
+    const value = document.createElement("div");
+    value.className = "ind-value";
+    value.textContent = fmt(ind.id, ind.value);
+    const sub = document.createElement("div");
+    sub.className = "ind-sub";
+    sub.textContent = ind.score == null
+      ? "資料不足"
+      : `${Math.round(ind.score)} 分 · ${ind.updated}`;
+    card.append(label, value, sub);
+    if (ind.score != null) {
+      const meter = document.createElement("div");
+      meter.className = "meter";
+      meter.innerHTML = `<div class="seg cold"></div><div class="seg hot"></div>`;
+      const dot = document.createElement("div");
+      dot.className = "dot";
+      dot.style.left = ind.score + "%";
+      meter.appendChild(dot);
+      const scale = document.createElement("div");
+      scale.className = "meter-scale";
+      for (const t of ["悲觀", "中性", "樂觀"]) {
+        const s = document.createElement("span");
+        s.textContent = t;
+        scale.appendChild(s);
+      }
+      card.append(meter, scale);
+    }
+    wrap.appendChild(card);
+  }
+}
+
+/* ---------- 折線圖（手寫 SVG＋十字線 tooltip） ---------- */
+function renderLineChart(container, points, opts) {
+  container.textContent = "";
+  if (!points || points.length < 2) {
+    const p = document.createElement("div");
+    p.style.cssText = "color:var(--text-muted);font-size:13px;padding:24px 0";
+    p.textContent = "資料不足，回補完成後會顯示走勢。";
+    container.appendChild(p);
+    return;
+  }
+  const W = 960, H = 300, m = { t: 14, r: 16, b: 26, l: 48 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const ys = points.map(p => p[1]);
+  let yMin = opts.yMin ?? Math.min(...ys), yMax = opts.yMax ?? Math.max(...ys);
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  if (opts.yMin == null) { const pad = (yMax - yMin) * 0.08; yMin -= pad; yMax += pad; }
+  const X = i => m.l + (i / (points.length - 1)) * iw;
+  const Y = v => m.t + (1 - (v - yMin) / (yMax - yMin)) * ih;
+
+  let bands = "";
+  if (opts.zoneBands) {
+    bands = `<rect x="${m.l}" y="${Y(100)}" width="${iw}" height="${Y(80) - Y(100)}" fill="var(--hot-wash)"/>
+      <rect x="${m.l}" y="${Y(20)}" width="${iw}" height="${Y(0) - Y(20)}" fill="var(--cold-wash)"/>`;
+  }
+
+  const nTicks = 4;
+  let grid = "", yLabels = "";
+  for (let i = 0; i <= nTicks; i++) {
+    const v = yMin + ((yMax - yMin) * i) / nTicks;
+    const y = Y(v);
+    grid += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    yLabels += `<text x="${m.l - 8}" y="${y + 3.5}" text-anchor="end" font-size="11"
+      fill="var(--text-muted)" font-variant-numeric="tabular-nums">${opts.tickFmt(v)}</text>`;
+  }
+  let xLabels = "";
+  const nx = Math.min(6, points.length);
+  for (let i = 0; i < nx; i++) {
+    const idx = Math.round((i / (nx - 1)) * (points.length - 1));
+    xLabels += `<text x="${X(idx)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${points[idx][0].slice(2)}</text>`;
+  }
+
+  const path = points.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+  const last = points[points.length - 1];
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = `${bands}${grid}${yLabels}${xLabels}
+    <line x1="${m.l}" x2="${W - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="var(--baseline)" stroke-width="1"/>
+    <path d="${path}" fill="none" stroke="${opts.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(points.length - 1)}" cy="${Y(last[1])}" r="4.5" fill="${opts.color}" stroke="var(--surface-1)" stroke-width="2"/>
+    <line id="xhair" y1="${m.t}" y2="${m.t + ih}" stroke="var(--baseline)" stroke-width="1" visibility="hidden"/>
+    <circle id="xdot" r="4.5" fill="${opts.color}" stroke="var(--surface-1)" stroke-width="2" visibility="hidden"/>
+    <rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/>`;
+  container.appendChild(svg);
+
+  const tip = document.createElement("div");
+  tip.className = "tooltip";
+  const tipDate = document.createElement("div");
+  tipDate.className = "tt-date";
+  const tipValue = document.createElement("div");
+  tipValue.className = "tt-value";
+  tip.append(tipDate, tipValue);
+  container.appendChild(tip);
+
+  const xhair = svg.querySelector("#xhair"), xdot = svg.querySelector("#xdot");
+  function onMove(ev) {
+    const rect = svg.getBoundingClientRect();
+    const sx = ((ev.clientX - rect.left) / rect.width) * W;
+    const idx = Math.max(0, Math.min(points.length - 1,
+      Math.round(((sx - m.l) / iw) * (points.length - 1))));
+    const [d, v] = points[idx];
+    const cx = X(idx), cy = Y(v);
+    xhair.setAttribute("x1", cx); xhair.setAttribute("x2", cx);
+    xhair.removeAttribute("visibility");
+    xdot.setAttribute("cx", cx); xdot.setAttribute("cy", cy);
+    xdot.removeAttribute("visibility");
+    tipDate.textContent = d;
+    tipValue.textContent = opts.valueFmt(v);
+    tip.style.visibility = "visible";
+    const px = (cx / W) * rect.width, py = (cy / H) * rect.height;
+    const flip = px > rect.width - 140;
+    tip.style.left = px + (flip ? -12 : 12) + "px";
+    tip.style.transform = flip ? "translate(-100%, -50%)" : "translate(0, -50%)";
+    tip.style.top = py + "px";
+  }
+  function onLeave() {
+    xhair.setAttribute("visibility", "hidden");
+    xdot.setAttribute("visibility", "hidden");
+    tip.style.visibility = "hidden";
+  }
+  svg.addEventListener("pointermove", onMove);
+  svg.addEventListener("pointerleave", onLeave);
+}
+
+/* ---------- 組合與更新 ---------- */
+function clip(points) {
+  if (rangeDays === Infinity) return points;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - rangeDays);
+  const iso = cutoff.toISOString().slice(0, 10);
+  return points.filter(p => p[0] >= iso);
+}
+
+function renderCharts() {
+  if (!seriesData) return;
+  renderLineChart(el("composite-chart"), clip(seriesData.composite), {
+    color: "var(--accent)",
+    zoneBands: true, yMin: 0, yMax: 100,
+    tickFmt: v => Math.round(v),
+    valueFmt: v => v.toFixed(1) + " 分",
+  });
+  const ind = (latestData?.indicators || []).find(i => i.id === currentInd);
+  el("ind-chart-title").textContent = (ind ? ind.name : "指標") + "走勢";
+  renderLineChart(el("indicator-chart"), clip(seriesData.indicators[currentInd] || []), {
+    color: "var(--accent)",
+    tickFmt: v => Math.abs(v) >= 1000 ? Math.round(v).toLocaleString() : +v.toFixed(2),
+    valueFmt: v => fmt(currentInd, v),
+  });
+}
+
+function renderRangeRow() {
+  const row = el("range-row");
+  row.textContent = "";
+  for (const [label, days] of RANGES) {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.setAttribute("aria-pressed", String(days === rangeDays));
+    b.addEventListener("click", () => {
+      rangeDays = days;
+      renderRangeRow();
+      renderCharts();
+    });
+    row.appendChild(b);
+  }
+}
+
+function renderTable(latest) {
+  const tbody = el("detail-table").querySelector("tbody");
+  tbody.textContent = "";
+  for (const ind of latest.indicators) {
+    const tr = document.createElement("tr");
+    const cells = [
+      [ind.name, ""],
+      [fmt(ind.id, ind.value), "num"],
+      [ind.score == null ? "—" : Math.round(ind.score) + " 分", "num"],
+      [ind.invert ? "越高越悲觀" : "越高越樂觀", ""],
+      [ind.updated || "—", ""],
+    ];
+    for (const [text, cls] of cells) {
+      const td = document.createElement("td");
+      if (cls) td.className = cls;
+      td.textContent = text;
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+async function init() {
+  let latest, series;
+  try {
+    [latest, series] = await Promise.all([
+      fetch("data/latest.json").then(r => { if (!r.ok) throw new Error("latest.json " + r.status); return r.json(); }),
+      fetch("data/series.json").then(r => { if (!r.ok) throw new Error("series.json " + r.status); return r.json(); }),
+    ]);
+  } catch (e) {
+    const err = el("error");
+    err.style.display = "block";
+    err.textContent = "載入資料失敗：" + e.message;
+    return;
+  }
+  latestData = latest;
+  seriesData = series;
+
+  el("as-of").textContent = "資料日 " + latest.date;
+  renderGauge(latest.composite);
+  el("hero-score").textContent = latest.composite == null ? "–" : Math.round(latest.composite);
+  const zoneEl = el("hero-zone");
+  zoneEl.textContent = latest.zone ? zoneText(latest.zone) : "";
+  zoneEl.className = "zone-" + (latest.zone || "neutral");
+  el("hero-advice").textContent = latest.zone ? zoneAdvice(latest.zone) : "";
+
+  renderCards(latest);
+
+  const sel = el("ind-select");
+  for (const ind of latest.indicators) {
+    const o = document.createElement("option");
+    o.value = ind.id;
+    o.textContent = ind.name;
+    sel.appendChild(o);
+  }
+  sel.value = currentInd;
+  sel.addEventListener("change", () => { currentInd = sel.value; renderCharts(); });
+
+  renderRangeRow();
+  renderCharts();
+  renderTable(latest);
+}
+
+init();
+</script>
+</body>
+</html>
