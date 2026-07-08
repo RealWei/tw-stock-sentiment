@@ -93,14 +93,18 @@ def parse_taiex_closes(payload):
     ]
 
 
-def fetch_taiex_closes(date_yyyymmdd):
+def fetch_taiex_month(date_yyyymmdd):
+    """該月加權指數收盤與成交金額：{"closes": [...], "volumes": [...]}。"""
     payload = _get_json(
         f"{TWSE}/afterTrading/FMTQIK",
         {"date": date_yyyymmdd, "response": "json"},
     )
     if payload.get("stat") != "OK":
-        return []
-    return parse_taiex_closes(payload)
+        return {"closes": [], "volumes": []}
+    return {
+        "closes": parse_taiex_closes(payload),
+        "volumes": parse_taiex_volumes(payload),
+    }
 
 
 # ---- 加權指數 OHLC 與成交值、櫃買指數 OHLC / 收盤 / 成交值 ----

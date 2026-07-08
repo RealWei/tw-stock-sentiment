@@ -78,16 +78,55 @@ def _trading_days(years):
 
 
 def bootstrap_taiex_closes(existing):
-    have = {d for d, _ in existing.get("taiex_close", [])}
+    have = {d for d, _ in existing.get("taiex_volume", [])}
     for month in _month_starts(CLOSE_YEARS):
         if any(d.startswith(month.strftime("%Y-%m")) for d in have) and month.strftime(
             "%Y-%m"
         ) != date.today().strftime("%Y-%m"):
             continue
-        closes = fetchers.fetch_taiex_closes(month.strftime("%Y%m%d"))
-        if closes:
-            upsert(HISTORY, "taiex_close", closes)
-            print(f"  taiex_close {month:%Y-%m}: {len(closes)} 筆")
+        month_data = fetchers.fetch_taiex_month(month.strftime("%Y%m%d"))
+        if month_data["closes"]:
+            upsert(HISTORY, "taiex_close", month_data["closes"])
+            upsert(HISTORY, "taiex_volume", month_data["volumes"])
+            print(f"  taiex_close/volume {month:%Y-%m}: {len(month_data['closes'])} 筆")
+        time.sleep(SLEEP_TWSE)
+
+
+def bootstrap_taiex_ohlc(existing):
+    """按月回補加權指數 OHLC（端點對月初日期偶有錯誤，用每月 15 日查詢）。"""
+    have = {d for d, _ in existing.get("taiex_high", [])}
+    for month in _month_starts(CLOSE_YEARS):
+        if any(d.startswith(month.strftime("%Y-%m")) for d in have) and month.strftime(
+            "%Y-%m"
+        ) != date.today().strftime("%Y-%m"):
+            continue
+        bars = fetchers.fetch_taiex_ohlc(month.strftime("%Y%m15"))
+        if bars:
+            upsert(HISTORY, "taiex_open", [(d, o) for d, o, h, l, c in bars])
+            upsert(HISTORY, "taiex_high", [(d, h) for d, o, h, l, c in bars])
+            upsert(HISTORY, "taiex_low", [(d, l) for d, o, h, l, c in bars])
+            print(f"  taiex_ohlc {month:%Y-%m}: {len(bars)} 筆")
+        time.sleep(SLEEP_TWSE)
+
+
+def bootstrap_tpex_daily(existing):
+    """逐日回補櫃買收盤與成交值（highlight 端點，OHLC 官方歷史需付費故僅收盤）。"""
+    have = {d for d, _ in existing.get("tpex_close", [])}
+    days = [d for d in _trading_days(DAILY_YEARS) if d.isoformat() not in have]
+    print(f"  tpex_daily: 需回補 {len(days)} 天")
+    for i, day in enumerate(days):
+        try:
+            result = fetchers.fetch_tpex_highlight(day.strftime("%Y/%m/%d"))
+        except Exception as exc:
+            print(f"  tpex {day}: {exc}", file=sys.stderr)
+            result = None
+        if result:
+            iso, close, volume = result
+            if iso == day.isoformat():
+                upsert(HISTORY, "tpex_close", [(iso, close)])
+                upsert(HISTORY, "tpex_volume", [(iso, volume)])
+        if i % 50 == 0:
+            print(f"  tpex_daily: {i}/{len(days)} ({day})")
         time.sleep(SLEEP_TWSE)
 
 
@@ -139,8 +178,14 @@ def bootstrap_taifex_csv(name, path, parse, extra_params=None):
 def main():
     existing = load_history(HISTORY)
 
-    print("回補加權指數收盤價（按月）")
+    print("回補加權指數收盤價與成交值（按月）")
     bootstrap_taiex_closes(existing)
+
+    print("回補加權指數 OHLC（按月）")
+    bootstrap_taiex_ohlc(existing)
+
+    print("回補櫃買指數收盤與成交值（逐日，較久）")
+    bootstrap_tpex_daily(existing)
 
     print("回補 Put/Call 未平倉比（30 天一段）")
     bootstrap_taifex_csv("pc_oi_ratio", "pcRatioDown", parse_pc_ratio_csv)

@@ -13,7 +13,11 @@ from collector.pipeline import (
     daily_snapshot,
     derive_indicator_series,
 )
+from collector.signals import scan_market, support_resistance
 from collector.storage import load_history, upsert
+
+MARKETS = {"taiex": "加權指數", "tpex": "櫃買指數"}
+DIRECTION_TEXT = {"bearish": "偏空", "bullish": "偏多"}
 
 ROOT = Path(__file__).resolve().parent.parent
 HISTORY = ROOT / "data" / "history.csv"
@@ -45,9 +49,34 @@ def fetch_all(today_yyyymmdd):
         if up + down:
             updates["breadth_ratio"] = [(date, up / (up + down))]
 
-    closes = attempt("taiex_close", lambda: fetchers.fetch_taiex_closes(today_yyyymmdd))
-    if closes:
-        updates["taiex_close"] = closes
+    month = attempt("taiex_close", lambda: fetchers.fetch_taiex_month(today_yyyymmdd))
+    if month and month["closes"]:
+        updates["taiex_close"] = month["closes"]
+        updates["taiex_volume"] = month["volumes"]
+
+    taiex_ohlc = attempt("taiex_ohlc", lambda: fetchers.fetch_taiex_ohlc(today_yyyymmdd))
+    if taiex_ohlc:
+        updates["taiex_open"] = [(d, o) for d, o, h, l, c in taiex_ohlc]
+        updates["taiex_high"] = [(d, h) for d, o, h, l, c in taiex_ohlc]
+        updates["taiex_low"] = [(d, l) for d, o, h, l, c in taiex_ohlc]
+
+    tpex_ohlc = attempt("tpex_ohlc", fetchers.fetch_tpex_ohlc)
+    if tpex_ohlc:
+        updates["tpex_open"] = [(d, o) for d, o, h, l, c in tpex_ohlc]
+        updates["tpex_high"] = [(d, h) for d, o, h, l, c in tpex_ohlc]
+        updates["tpex_low"] = [(d, l) for d, o, h, l, c in tpex_ohlc]
+        updates["tpex_close"] = [(d, c) for d, o, h, l, c in tpex_ohlc]
+
+    tpex_day = attempt(
+        "tpex_volume",
+        lambda: fetchers.fetch_tpex_highlight(
+            f"{today_yyyymmdd[:4]}/{today_yyyymmdd[4:6]}/{today_yyyymmdd[6:]}"
+        ),
+    )
+    if tpex_day:
+        date, close, volume = tpex_day
+        updates.setdefault("tpex_close", []).append((date, close))
+        updates["tpex_volume"] = [(date, volume)]
 
     pc = attempt("pc_oi_ratio", fetchers.fetch_put_call_oi_ratio)
     if pc:
@@ -64,6 +93,57 @@ def fetch_all(today_yyyymmdd):
         updates["dividend_yield"] = [(date, dy)]
 
     return updates, failures
+
+
+def build_signal_report(raw):
+    """從原始序列產生各市場技術訊號與撐壓位階。"""
+    report = {}
+    for mkt, label in MARKETS.items():
+        close_series = raw.get(f"{mkt}_close", [])
+        entry = {"name": label, "events": [], "levels": None}
+        if len(close_series) >= 30:
+            dates = [d for d, _ in close_series]
+            closes = [v for _, v in close_series]
+            by_date = dict(close_series)
+            opens = dict(raw.get(f"{mkt}_open", []))
+            highs = dict(raw.get(f"{mkt}_high", []))
+            lows = dict(raw.get(f"{mkt}_low", []))
+            ohlc = {
+                d: (opens[d], highs[d], lows[d], by_date[d])
+                for d in dates
+                if d in opens and d in highs and d in lows
+            }
+            volumes = dict(raw.get(f"{mkt}_volume", []))
+            events = scan_market(dates, closes, volumes, ohlc)
+            events.sort(key=lambda e: e["date"], reverse=True)
+            entry["events"] = events
+            entry["levels"] = support_resistance(closes)
+        report[mkt] = entry
+    return report
+
+
+def notify_new_signals(report, state):
+    """對「最新交易日」的新訊號發 Telegram（去重記在 state）。"""
+    seen = set(state.get("notified_signals", []))
+    lines, keys = [], []
+    for mkt, entry in report.items():
+        if not entry["events"]:
+            continue
+        latest_date = entry["events"][0]["date"]
+        for e in entry["events"]:
+            if e["date"] != latest_date:
+                continue
+            key = f"{e['date']}|{mkt}|{e['id']}|{e['direction']}"
+            if key in seen:
+                continue
+            keys.append(key)
+            lines.append(
+                f"・{entry['name']}：{e['name']}（{DIRECTION_TEXT[e['direction']]}，{e['date']}）"
+            )
+    if lines:
+        send_telegram("📡 技術訊號\n" + "\n".join(lines))
+    # 只保留近 200 筆避免無限成長
+    state["notified_signals"] = (state.get("notified_signals", []) + keys)[-200:]
 
 
 def load_state():
@@ -128,6 +208,14 @@ def main():
     derived = derive_indicator_series(raw)
     snapshot = daily_snapshot(derived, now.strftime("%Y-%m-%d"))
     write_outputs(snapshot, derived)
+
+    signal_report = build_signal_report(raw)
+    (DOCS_DATA / "signals.json").write_text(
+        json.dumps({"generated": now.strftime("%Y-%m-%d"), "markets": signal_report},
+                   ensure_ascii=False)
+    )
+    total_events = sum(len(m["events"]) for m in signal_report.values())
+    print(f"技術訊號：近 30 日共 {total_events} 筆")
     comp = snapshot["composite"]
     print(f"總分: {comp:.1f} ({snapshot['zone']})" if comp is not None else "總分: 資料不足")
 
@@ -147,6 +235,8 @@ def main():
         print(f"已通知：{state['zone']} → {snapshot['zone']}")
     if snapshot["zone"] is not None:
         state["zone"] = snapshot["zone"]
+
+    notify_new_signals(signal_report, state)
     save_state(state)
 
 
