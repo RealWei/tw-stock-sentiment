@@ -27,7 +27,7 @@ def upsert(path, indicator, points):
     history[indicator] = sorted(by_date.items())
 
     with open(path, "w", newline="") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow(["date", "indicator", "value"])
         for ind in sorted(history):
             for date, value in history[ind]:
