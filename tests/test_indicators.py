@@ -2,19 +2,7 @@ import math
 
 import pytest
 
-from collector.indicators import bias_ratio, realized_vol, rate_of_change
-
-
-class TestBiasRatio:
-    def test_close_above_moving_average_is_positive(self):
-        closes = [100.0] * 239 + [100.0, 110.0]
-        # 240 日均 =（239 個 100 + 一個 110）平均之前的最後 240 筆
-        result = bias_ratio(closes, window=240)
-        ma = (100.0 * 239 + 110.0) / 240
-        assert result == pytest.approx((110.0 - ma) / ma * 100)
-
-    def test_insufficient_history_returns_none(self):
-        assert bias_ratio([100.0] * 10, window=240) is None
+from collector.indicators import realized_vol, rate_of_change
 
 
 class TestRealizedVol:

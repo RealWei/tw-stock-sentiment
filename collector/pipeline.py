@@ -2,7 +2,7 @@
 
 from datetime import date as date_type, timedelta
 
-from collector.indicators import bias_ratio, rate_of_change, realized_vol
+from collector.indicators import rate_of_change, realized_vol
 from collector.scoring import composite_score, indicator_score, zone
 
 PERCENTILE_YEARS = 3
@@ -12,12 +12,10 @@ DAILY_STALE_DAYS = 14
 # id → (顯示名稱, invert: 越高越恐慌)
 INDICATORS = {
     "pe": ("個股本益比中位數", False),
-    "dividend_yield": ("個股殖利率中位數", True),
     "margin_roc20": ("融資餘額20日增減", False),
     "foreign_net_oi": ("外資台指期淨部位", False),
     "pc_oi_ratio": ("Put/Call未平倉比", True),
     "vol20": ("大盤20日波動率", True),
-    "bias_240": ("大盤年線乖離率", False),
     "breadth_ma20": ("漲跌家數比(20日)", False),
 }
 
@@ -40,12 +38,11 @@ def derive_indicator_series(raw):
     foreign_net_oi, pe, dividend_yield
     """
     derived = {}
-    for passthrough in ("pe", "dividend_yield", "foreign_net_oi", "pc_oi_ratio"):
+    for passthrough in ("pe", "foreign_net_oi", "pc_oi_ratio"):
         if raw.get(passthrough):
             derived[passthrough] = list(raw[passthrough])
 
     if raw.get("taiex_close"):
-        derived["bias_240"] = _rolling(raw["taiex_close"], 240, bias_ratio)
         derived["vol20"] = _rolling(raw["taiex_close"], 20, realized_vol)
 
     if raw.get("margin_balance"):
@@ -106,10 +103,10 @@ def daily_snapshot(derived, as_of):
 
 
 # 依 2024-08 ~ 2026-07 波段回測選出的單邊指標組（詳見 README 權重分析）：
-# 高點常見極端：外資期貨、融資增速、年線乖離、P/C 比
-# 低點常見極端：波動率（最可靠）、估值、融資增速、漲跌家數、P/C 比
-GREED_GROUP = ("foreign_net_oi", "margin_roc20", "bias_240", "pc_oi_ratio")
-FEAR_GROUP = ("vol20", "pe", "dividend_yield", "margin_roc20", "breadth_ma20", "pc_oi_ratio")
+# 高點常見極端：外資期貨、融資增速、P/C 比
+# 低點常見極端：波動率（最可靠）、本益比、融資增速、漲跌家數、P/C 比
+GREED_GROUP = ("foreign_net_oi", "margin_roc20", "pc_oi_ratio")
+FEAR_GROUP = ("vol20", "pe", "margin_roc20", "breadth_ma20", "pc_oi_ratio")
 METER_ALIGN_DAYS = 5   # 各指標極端值常在轉折窗內不同天出現，取近 N 日最極端對齊
 MIN_GROUP_SIZE = 3
 OVERHEAT_METER = 80.0

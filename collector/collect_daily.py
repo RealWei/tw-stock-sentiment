@@ -91,9 +91,8 @@ def fetch_all(today_yyyymmdd):
 
     valuation = attempt("pe_yield", lambda: fetchers.fetch_pe_yield_medians(today_yyyymmdd))
     if valuation:
-        date, pe, dy = valuation
+        date, pe, _ = valuation
         updates["pe"] = [(date, pe)]
-        updates["dividend_yield"] = [(date, dy)]
 
     return updates, failures
 

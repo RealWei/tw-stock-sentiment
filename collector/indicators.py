@@ -5,14 +5,6 @@ import math
 TRADING_DAYS_PER_YEAR = 252
 
 
-def bias_ratio(closes, window=240):
-    """年線乖離率(%)：(最新收盤 − N 日均) / N 日均 × 100。資料不足回傳 None。"""
-    if len(closes) < window:
-        return None
-    ma = sum(closes[-window:]) / window
-    return (closes[-1] - ma) / ma * 100
-
-
 def realized_vol(closes, window=20):
     """N 日歷史波動率（年化 %）。資料不足回傳 None。"""
     if len(closes) < window + 1:

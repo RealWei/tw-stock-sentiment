@@ -26,15 +26,15 @@ class TestNotificationMessage:
             "date": "2026-07-08",
             "composite": 85.2,
             "zone": "overheat",
-            "scores": {"bias_240": 97.0, "vol20": 60.0},
-            "values": {"bias_240": 15.3, "vol20": 18.0},
+            "scores": {"margin_roc20": 97.0, "vol20": 60.0},
+            "values": {"margin_roc20": 15.3, "vol20": 18.0},
         }
         msg = notification_message(snap)
         assert "過熱" in msg
         assert "85" in msg
         assert "減碼" in msg
         # 達 95 百分位的單項指標要列出
-        assert "大盤年線乖離率" in msg
+        assert "融資餘額20日增減" in msg
 
     def test_cold_message_mentions_add(self):
         snap = {

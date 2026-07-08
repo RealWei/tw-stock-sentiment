@@ -39,12 +39,12 @@ class TestDailySnapshot:
         # 兩個假指標，今天的值都在歷史高檔 → 總分高 → 過熱
         dates = [f"2025-{m:02d}-01" for m in range(1, 13)] + ["2026-07-08"]
         greed = {  # invert=False，遞增 → 今天是最高 → 100 分
-            "bias_240": [(d, i) for i, d in enumerate(dates)],
+            "margin_roc20": [(d, i) for i, d in enumerate(dates)],
             "vol20": [(d, 30 - i) for i, d in enumerate(dates)],  # invert=True，遞減 → 也貪婪
         }
         snap = daily_snapshot(greed, "2026-07-08")
         assert snap["date"] == "2026-07-08"
-        assert snap["scores"]["bias_240"] > 90
+        assert snap["scores"]["margin_roc20"] > 90
         assert snap["scores"]["vol20"] > 90
         assert snap["composite"] > 90
         assert snap["zone"] == "overheat"
@@ -82,7 +82,7 @@ class TestDualMeters:
         n = len(dates)
         # 過熱組指標各自在最後 5 天內「不同天」創極端（新高或反向指標新低）
         derived = {}
-        for k, ind in enumerate(["foreign_net_oi", "margin_roc20", "bias_240", "pc_oi_ratio"]):
+        for k, ind in enumerate(["foreign_net_oi", "margin_roc20", "pc_oi_ratio"]):
             sign = -1.0 if ind == "pc_oi_ratio" else 1.0  # 反向指標用遞減
             vals = [sign * float(i) for i in range(n)]
             vals[-1 - k] = sign * float(n + 10)  # 極端日錯開在最後 5 天內

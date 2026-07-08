@@ -184,8 +184,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 
 <footer>
   各指標以近三年歷史百分位轉為 0-100 分（越高越樂觀），等權平均為總分（儀表顯示用）。<br>
-  燈號改由回測選組的單邊指標決定：<b>過熱計</b>（外資期貨、融資增速、年線乖離、P/C 比）≥80 提醒減碼；
-  <b>恐慌計</b>（波動率、估值、融資增速、漲跌家數、P/C 比）≤15 提醒加碼；各指標取近 5 日最極端分數對齊。<br>
+  燈號改由回測選組的單邊指標決定：<b>過熱計</b>（外資期貨、融資增速、P/C 比）≥80 提醒減碼；
+  <b>恐慌計</b>（波動率、本益比、融資增速、漲跌家數、P/C 比）≤15 提醒加碼；各指標取近 5 日最極端分數對齊。<br>
   資料來源：臺灣證券交易所、臺灣期貨交易所、櫃買中心公開資料，每個交易日晚間自動更新。本頁僅供參考，非投資建議。
 </footer>
 
@@ -194,12 +194,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 
 const FORMATS = {
   pe:             v => v.toFixed(1) + " 倍",
-  dividend_yield: v => v.toFixed(2) + " %",
   margin_roc20:   v => (v >= 0 ? "+" : "") + v.toFixed(2) + " %",
   foreign_net_oi: v => Math.round(v).toLocaleString() + " 口",
   pc_oi_ratio:    v => v.toFixed(1) + " %",
   vol20:          v => v.toFixed(1) + " %",
-  bias_240:       v => (v >= 0 ? "+" : "") + v.toFixed(1) + " %",
   breadth_ma20:   v => (v * 100).toFixed(1) + " %",
 };
 const fmt = (id, v) => (v == null ? "—" : (FORMATS[id] || (x => x.toFixed(2)))(v));
@@ -208,7 +206,7 @@ const RANGES = [["3M", 90], ["6M", 183], ["1Y", 365], ["2Y", 730], ["全部", In
 let rangeDays = 365;
 let seriesData = null;
 let latestData = null;
-let currentInd = "bias_240";
+let currentInd = "meter_greed";
 
 const el = id => document.getElementById(id);
 
