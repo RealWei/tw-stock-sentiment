@@ -151,6 +151,22 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   </div>
 </div>
 
+<div class="card" id="position-card" style="display:none">
+  <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+    <div style="flex:0 0 auto">
+      <div style="font-size:13px;color:var(--text-secondary)">建議持股水位</div>
+      <div id="pos-score" style="font-size:44px;font-weight:650;line-height:1.1">–</div>
+      <div id="pos-delta" style="font-size:13px;color:var(--text-secondary)"></div>
+    </div>
+    <div style="flex:1 1 260px;min-width:220px">
+      <div class="meter"><div class="seg cold"></div><div class="seg hot"></div><div class="dot" id="pos-dot"></div></div>
+      <div class="meter-scale"><span>0%（空手）</span><span>50%</span><span>100%（滿倉）</span></div>
+      <div id="pos-parts" style="font-size:13px;color:var(--text-secondary);margin-top:10px"></div>
+      <ul id="pos-reasons" style="font-size:12.5px;color:var(--text-secondary);margin:8px 0 0;padding-left:18px"></ul>
+    </div>
+  </div>
+</div>
+
 <div id="cards"></div>
 
 <div class="section-title">技術訊號（加權／櫃買，近 30 個交易日）</div>
@@ -571,6 +587,27 @@ async function init() {
 
   renderCards(latest);
   if (signals) renderSignals(signals);
+
+  // 建議持股水位（本機產生的 data/position.json；不存在則隱藏區塊）
+  fetch("data/position.json").then(r => r.ok ? r.json() : null).catch(() => null).then(pos => {
+    if (!pos || !pos.latest) return;
+    const L = pos.latest;
+    el("position-card").style.display = "";
+    el("pos-score").textContent = L.score + "%";
+    el("pos-delta").textContent = "資料日 " + L.date +
+      (L.delta == null ? "" : "｜前日 " + (L.score - L.delta) + "%（" + (L.delta >= 0 ? "+" : "") + L.delta + "）");
+    el("pos-dot").style.left = "calc(" + L.score + "% - 5px)";
+    el("pos-parts").textContent = "趨勢基準 " + L.parts.base +
+      "｜儀表板 " + (L.parts.dash >= 0 ? "+" : "") + L.parts.dash +
+      "｜籌碼 " + (L.parts.chip >= 0 ? "+" : "") + L.parts.chip +
+      "｜投資癮 " + (L.parts.inv >= 0 ? "+" : "") + L.parts.inv;
+    const ul = el("pos-reasons");
+    for (const r of (L.reasons || []).slice(0, 6)) {
+      const li = document.createElement("li");
+      li.textContent = r;
+      ul.appendChild(li);
+    }
+  });
 
   const sel = el("ind-select");
   for (const [id, m] of Object.entries(METER_OPTS)) {

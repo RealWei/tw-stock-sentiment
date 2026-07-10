@@ -2,3 +2,8 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# 付費內容衍生，勿公開
+notes/
+chipwatch/
+.claude/
