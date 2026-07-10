@@ -1065,6 +1065,7 @@ date,indicator,value
 2026-07-06,foreign_net_oi,-80087.0
 2026-07-07,foreign_net_oi,-80042.0
 2026-07-08,foreign_net_oi,-81268.0
+2026-07-09,foreign_net_oi,-80730.0
 2017-12-18,margin_balance,172872121.0
 2018-06-27,margin_balance,189558517.0
 2018-09-18,margin_balance,161251783.0
@@ -2038,6 +2039,7 @@ date,indicator,value
 2026-07-06,pc_oi_ratio,122.22
 2026-07-07,pc_oi_ratio,98.68
 2026-07-08,pc_oi_ratio,129.81
+2026-07-09,pc_oi_ratio,118.81
 2024-07-10,pe,22.305
 2024-07-17,pe,22.55
 2024-07-31,pe,21.21
