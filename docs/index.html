@@ -6,58 +6,72 @@
 <title>台股情緒儀表板</title>
 <style>
 :root {
-  --surface-1: #fcfcfb;
-  --page: #f9f9f7;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --grid: #e1e0d9;
-  --baseline: #c3c2b7;
-  --border: rgba(11,11,11,0.10);
-  --accent: #2a78d6;      /* series-1 藍 */
-  --hot: #e34948;         /* diverging 暖極：過熱 */
-  --cold: #2a78d6;        /* diverging 冷極：過冷 */
-  --mid: #f0efec;         /* diverging 中性 */
-  --hot-wash: rgba(227,73,72,0.08);
-  --cold-wash: rgba(42,120,214,0.08);
+  --surface-1: #ffffff;
+  --page: #f6f8fb;
+  --text-primary: #0a2540;   /* Stripe navy */
+  --text-secondary: #425466;
+  --text-muted: #8792a2;
+  --grid: #e9edf3;
+  --baseline: #cdd6e0;
+  --border: rgba(10,37,64,0.10);
+  --shadow: 0 1px 3px rgba(16,24,40,0.07), 0 1px 2px rgba(16,24,40,0.04);
+  --accent: #635BFF;       /* series-1 藍紫（palette 驗證通過） */
+  --hot: #DF1B41;          /* diverging 暖極：過熱 */
+  --cold: #635BFF;         /* diverging 冷極：過冷 */
+  --mid: #eef1f6;          /* diverging 中性 */
+  --hot-wash: rgba(223,27,65,0.07);
+  --cold-wash: rgba(99,91,255,0.08);
   --tooltip-bg: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --surface-1: #1a1a19;
-    --page: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --grid: #2c2c2a;
-    --baseline: #383835;
-    --border: rgba(255,255,255,0.10);
-    --accent: #3987e5;
-    --hot: #e66767;
-    --cold: #3987e5;
-    --mid: #383835;
-    --hot-wash: rgba(230,103,103,0.10);
-    --cold-wash: rgba(57,135,229,0.10);
-    --tooltip-bg: #262624;
+    --surface-1: #151821;
+    --page: #0b0d12;
+    --text-primary: #f0f2f7;
+    --text-secondary: #a3acbd;
+    --text-muted: #717a8c;
+    --grid: #232837;
+    --baseline: #37405a;
+    --border: rgba(240,242,247,0.09);
+    --shadow: 0 1px 3px rgba(0,0,0,0.35);
+    --accent: #7A73FF;
+    --hot: #F2555A;
+    --cold: #7A73FF;
+    --mid: #262b3a;
+    --hot-wash: rgba(242,85,90,0.11);
+    --cold-wash: rgba(122,115,255,0.13);
+    --tooltip-bg: #1c2130;
   }
 }
 * { box-sizing: border-box; margin: 0; }
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Inter", -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background: var(--page);
   color: var(--text-primary);
-  padding: 20px 16px 48px;
+  padding: 24px 20px 56px;
   max-width: 1080px;
   margin: 0 auto;
+  -webkit-font-smoothing: antialiased;
 }
 header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-h1 { font-size: 20px; font-weight: 650; }
-#as-of { color: var(--text-muted); font-size: 13px; }
+h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
+#as-of { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.micro-label {
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+.delta-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  border-radius: 999px; padding: 2px 9px;
+  background: var(--mid); color: var(--text-secondary);
 }
 /* 總分區 */
 #hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
@@ -74,10 +88,10 @@ h1 { font-size: 20px; font-weight: 650; }
 #hero-meters b.alert-hot { color: var(--hot); }
 #hero-meters b.alert-cold { color: var(--cold); }
 /* 指標卡 */
-#cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-bottom: 24px; }
-.ind-label { font-size: 13px; color: var(--text-secondary); }
-.ind-value { font-size: 22px; font-weight: 600; margin: 4px 0 2px; }
-.ind-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+#cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.ind-label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.02em; }
+.ind-value { font-size: 24px; font-weight: 650; margin: 5px 0 2px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.ind-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-variant-numeric: tabular-nums; }
 .meter { position: relative; height: 6px; border-radius: 3px; background: var(--mid); }
 .meter .seg { position: absolute; top: 0; height: 100%; }
 .meter .seg.cold { left: 0; width: 20%; background: var(--cold-wash); border-radius: 3px 0 0 3px; }
@@ -102,14 +116,16 @@ h1 { font-size: 20px; font-weight: 650; }
 .sig-chip.bullish { color: var(--cold); background: var(--cold-wash); }
 .sig-empty { color: var(--text-muted); font-size: 13px; }
 /* 圖表 */
-.section-title { font-size: 15px; font-weight: 650; margin: 24px 0 10px; }
+.section-title { font-size: 13px; font-weight: 650; color: var(--text-secondary); letter-spacing: 0.04em; margin: 28px 0 12px; }
 #range-row { display: flex; gap: 6px; margin: 0 0 12px; flex-wrap: wrap; }
 #range-row button, #ind-select {
   font: inherit; font-size: 13px;
   background: var(--surface-1); color: var(--text-secondary);
-  border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 8px; padding: 5px 13px; cursor: pointer;
+  box-shadow: var(--shadow); transition: color .12s, border-color .12s;
 }
-#range-row button[aria-pressed="true"] { color: var(--text-primary); font-weight: 650; border-color: var(--baseline); }
+#range-row button:hover { color: var(--text-primary); }
+#range-row button[aria-pressed="true"] { color: var(--accent); font-weight: 650; border-color: var(--accent); }
 .chart-card { margin-bottom: 16px; }
 .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .chart-title { font-size: 14px; font-weight: 650; }
@@ -125,8 +141,9 @@ h1 { font-size: 20px; font-weight: 650; }
 .tooltip .tt-value { font-size: 15px; font-weight: 650; }
 /* 表格 */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
-td { padding: 7px 8px; border-bottom: 1px solid var(--grid); }
+th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11.5px; letter-spacing: 0.04em; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+td { padding: 8px; border-bottom: 1px solid var(--grid); }
+tbody tr:hover td { background: var(--page); }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 th.num { text-align: right; }
 tr:last-child td { border-bottom: none; }
@@ -151,20 +168,28 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   </div>
 </div>
 
-<div class="card" id="position-card" style="display:none">
-  <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+<div class="card" id="position-card" style="display:none;margin-bottom:16px">
+  <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
     <div style="flex:0 0 auto">
-      <div style="font-size:13px;color:var(--text-secondary)">建議持股水位</div>
-      <div id="pos-score" style="font-size:44px;font-weight:650;line-height:1.1">–</div>
-      <div id="pos-delta" style="font-size:13px;color:var(--text-secondary)"></div>
+      <div class="micro-label">建議持股水位</div>
+      <div id="pos-score" style="font-size:44px;font-weight:650;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">–</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+        <span class="delta-pill" id="pos-pill"></span>
+        <span id="pos-date" style="font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums"></span>
+      </div>
     </div>
-    <div style="flex:1 1 260px;min-width:220px">
+    <div style="flex:1 1 280px;min-width:230px">
       <div class="meter"><div class="seg cold"></div><div class="seg hot"></div><div class="dot" id="pos-dot"></div></div>
       <div class="meter-scale"><span>0%（空手）</span><span>50%</span><span>100%（滿倉）</span></div>
-      <div id="pos-parts" style="font-size:13px;color:var(--text-secondary);margin-top:10px"></div>
-      <ul id="pos-reasons" style="font-size:12.5px;color:var(--text-secondary);margin:8px 0 0;padding-left:18px"></ul>
+      <div id="pos-parts" style="font-size:13px;color:var(--text-secondary);margin-top:12px;font-variant-numeric:tabular-nums"></div>
+      <ul id="pos-reasons" style="font-size:12.5px;line-height:1.55;color:var(--text-secondary);margin:8px 0 0;padding-left:18px"></ul>
     </div>
   </div>
+</div>
+
+<div class="card chart-card" id="pos-chart-card" style="display:none">
+  <div class="chart-head"><span class="chart-title">持股水位每日走勢（2026-01 起）</span></div>
+  <div class="chart-box" id="position-chart"></div>
 </div>
 
 <div id="cards"></div>
@@ -404,7 +429,16 @@ function renderLineChart(container, points, opts) {
     xLabels += `<text x="${X(idx)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${points[idx][0].slice(2)}</text>`;
   }
 
-  const path = points.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+  let path;
+  if (opts.step) {
+    // 階梯線（step-after）：水位持有到下一次變動
+    path = `M${X(0).toFixed(1)},${Y(points[0][1]).toFixed(1)}`;
+    for (let i = 1; i < points.length; i++) {
+      path += `H${X(i).toFixed(1)}V${Y(points[i][1]).toFixed(1)}`;
+    }
+  } else {
+    path = points.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+  }
   const last = points[points.length - 1];
 
   const svgNS = "http://www.w3.org/2000/svg";
@@ -594,8 +628,9 @@ async function init() {
     const L = pos.latest;
     el("position-card").style.display = "";
     el("pos-score").textContent = L.score + "%";
-    el("pos-delta").textContent = "資料日 " + L.date +
-      (L.delta == null ? "" : "｜前日 " + (L.score - L.delta) + "%（" + (L.delta >= 0 ? "+" : "") + L.delta + "）");
+    el("pos-pill").textContent = L.delta == null ? "—"
+      : (L.delta > 0 ? "▲ +" + L.delta : L.delta < 0 ? "▼ " + L.delta : "— 0") + " vs 前日";
+    el("pos-date").textContent = "資料日 " + L.date;
     el("pos-dot").style.left = "calc(" + L.score + "% - 5px)";
     el("pos-parts").textContent = "趨勢基準 " + L.parts.base +
       "｜儀表板 " + (L.parts.dash >= 0 ? "+" : "") + L.parts.dash +
@@ -606,6 +641,15 @@ async function init() {
       const li = document.createElement("li");
       li.textContent = r;
       ul.appendChild(li);
+    }
+    // 每日走勢（階梯線：水位持有到下一次變動）
+    if (pos.series && pos.series.length > 1) {
+      el("pos-chart-card").style.display = "";
+      renderLineChart(el("position-chart"), pos.series, {
+        color: "var(--accent)", step: true, yMin: 0, yMax: 100,
+        tickFmt: v => Math.round(v) + "%",
+        valueFmt: v => "水位 " + v + "%",
+      });
     }
   });
 
