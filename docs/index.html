@@ -21,6 +21,7 @@
   --mid: #eef1f6;          /* diverging 中性 */
   --hot-wash: rgba(223,27,65,0.07);
   --cold-wash: rgba(99,91,255,0.08);
+  --good-wash: rgba(33,122,70,0.12);   /* status 綠：有觀察類股 */
   --tooltip-bg: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
@@ -40,6 +41,7 @@
     --mid: #262b3a;
     --hot-wash: rgba(242,85,90,0.11);
     --cold-wash: rgba(122,115,255,0.13);
+    --good-wash: rgba(62,207,119,0.16);
     --tooltip-bg: #1c2130;
   }
 }
@@ -99,11 +101,12 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .wl-cell .d { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .wl-cell .n { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .wl-cell .s { font-size: 10px; color: var(--text-muted); }
-.wl-cell.has { background: var(--cold-wash); }
+.wl-cell.has { background: var(--good-wash); }
 .wl-cell.slight-only { background: var(--mid); }
 .wl-cell.slight-only .n { color: var(--text-secondary); }
-.wl-cell.zero { background: var(--hot-wash); }
-.wl-cell.zero .n { color: var(--hot); }
+.wl-cell.zero { background: var(--hot); }
+.wl-cell.zero .n { color: #fff; }
+.wl-cell.zero .d, .wl-cell.zero .s { color: rgba(255,255,255,0.8); }
 .wl-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); margin-top: 10px; flex-wrap: wrap; }
 .wl-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 .wl-list-title { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; margin: 18px 0 2px; }
@@ -245,9 +248,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   <div class="wl-alert" id="wl-alert"></div>
   <div id="wl-calendars"></div>
   <div class="wl-legend">
-    <span><i style="background:var(--cold-wash)"></i>有觀察類股（數字＝檔數）</span>
+    <span><i style="background:var(--good-wash)"></i>有觀察類股（數字＝檔數）</span>
     <span><i style="background:var(--mid)"></i>僅稍微觀察</span>
-    <span><i style="background:var(--hot-wash)"></i>掛零</span>
+    <span><i style="background:var(--hot)"></i>掛零</span>
   </div>
   <div class="wl-list-title">近 30 日名單</div>
   <div id="wl-list"></div>
