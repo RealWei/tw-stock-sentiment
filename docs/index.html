@@ -73,6 +73,33 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   border-radius: 999px; padding: 2px 9px;
   background: var(--mid); color: var(--text-secondary);
 }
+/* 觀察類股溫度計 */
+.wl-alert { font-size: 13px; line-height: 1.7; margin-top: 8px; color: var(--text-secondary); }
+.wl-alert .warn { color: var(--hot); font-weight: 600; }
+#wl-calendars { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 14px; }
+.wl-cal { flex: 1 1 300px; min-width: 272px; max-width: 460px; }
+.wl-cal-title { font-size: 13px; font-weight: 650; margin-bottom: 8px; }
+.wl-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.wl-dow { font-size: 10px; color: var(--text-muted); text-align: center; padding-bottom: 2px; }
+.wl-cell { border-radius: 6px; min-height: 46px; padding: 3px 2px 4px; text-align: center; }
+.wl-cell .d { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.wl-cell .n { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.wl-cell .s { font-size: 10px; color: var(--text-muted); }
+.wl-cell.has { background: var(--cold-wash); }
+.wl-cell.slight-only { background: var(--mid); }
+.wl-cell.slight-only .n { color: var(--text-secondary); }
+.wl-cell.zero { background: var(--hot-wash); }
+.wl-cell.zero .n { color: var(--hot); }
+.wl-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); margin-top: 10px; flex-wrap: wrap; }
+.wl-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.wl-list-title { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; margin: 18px 0 2px; }
+.wl-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--grid); font-size: 12.5px; line-height: 1.55; }
+.wl-row:last-child { border-bottom: none; }
+.wl-row .dt { flex: 0 0 44px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.wl-row .names { color: var(--text-secondary); }
+.wl-row .names div + div { margin-top: 2px; }
+.wl-row .muted { color: var(--text-muted); }
+.wl-row .none { color: var(--hot); font-weight: 600; }
 /* 總分區 */
 #hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
 #gauge-wrap { flex: 0 0 auto; }
@@ -190,6 +217,19 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 <div class="card chart-card" id="pos-chart-card" style="display:none">
   <div class="chart-head"><span class="chart-title">持股水位每日走勢（2026-01 起）</span></div>
   <div class="chart-box" id="position-chart"></div>
+</div>
+
+<div class="card" id="watchlist-card" style="display:none;margin-bottom:16px">
+  <div class="micro-label">投資癮觀察類股溫度計</div>
+  <div class="wl-alert" id="wl-alert"></div>
+  <div id="wl-calendars"></div>
+  <div class="wl-legend">
+    <span><i style="background:var(--cold-wash)"></i>有觀察類股（數字＝檔數）</span>
+    <span><i style="background:var(--mid)"></i>僅稍微觀察</span>
+    <span><i style="background:var(--hot-wash)"></i>掛零</span>
+  </div>
+  <div class="wl-list-title">近 30 日名單</div>
+  <div id="wl-list"></div>
 </div>
 
 <div id="cards"></div>
@@ -386,6 +426,107 @@ function renderSignals(data) {
     }
     card.appendChild(list);
     wrap.appendChild(card);
+  }
+}
+
+/* ---------- 觀察類股溫度計（雙月日曆＋近 30 日名單） ---------- */
+function renderWatchlist(data) {
+  el("watchlist-card").style.display = "";
+
+  const box = el("wl-alert");
+  box.textContent = "";
+  for (const line of (data.alert && data.alert.lines) || []) {
+    const div = document.createElement("div");
+    div.textContent = line;
+    if (line.startsWith("🔴")) div.className = "warn";
+    box.appendChild(div);
+  }
+
+  const byDate = {};
+  for (const e of data.days) byDate[e.date] = e;
+  const latest = new Date(data.days[data.days.length - 1].date + "T00:00:00");
+
+  const wrap = el("wl-calendars");
+  wrap.textContent = "";
+  const DOW = ["一", "二", "三", "四", "五", "六", "日"];
+  for (const off of [-1, 0]) {
+    const m0 = new Date(latest.getFullYear(), latest.getMonth() + off, 1);
+    const cal = document.createElement("div");
+    cal.className = "wl-cal";
+    const t = document.createElement("div");
+    t.className = "wl-cal-title";
+    t.textContent = `${m0.getFullYear()} 年 ${m0.getMonth() + 1} 月`;
+    cal.appendChild(t);
+    const grid = document.createElement("div");
+    grid.className = "wl-grid";
+    for (const d of DOW) {
+      const h = document.createElement("div");
+      h.className = "wl-dow";
+      h.textContent = d;
+      grid.appendChild(h);
+    }
+    for (let i = 0; i < (m0.getDay() + 6) % 7; i++) grid.appendChild(document.createElement("div"));
+    const nDays = new Date(m0.getFullYear(), m0.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= nDays; d++) {
+      const iso = `${m0.getFullYear()}-${String(m0.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const cell = document.createElement("div");
+      cell.className = "wl-cell";
+      const day = document.createElement("div");
+      day.className = "d";
+      day.textContent = d;
+      cell.appendChild(day);
+      const e = byDate[iso];
+      if (e) {
+        const w = e.watch.length, s = e.slight.length;
+        cell.classList.add(w ? "has" : (s ? "slight-only" : "zero"));
+        cell.title = iso + "\n觀察：" + (e.watch.join("、") || "—") +
+          "\n稍微觀察：" + (e.slight.join("、") || "—");
+        const n = document.createElement("div");
+        n.className = "n";
+        n.textContent = w;
+        cell.appendChild(n);
+        if (s) {
+          const sub = document.createElement("div");
+          sub.className = "s";
+          sub.textContent = "稍 " + s;
+          cell.appendChild(sub);
+        }
+      }
+      grid.appendChild(cell);
+    }
+    cal.appendChild(grid);
+    wrap.appendChild(cal);
+  }
+
+  const lo = new Date(latest);
+  lo.setDate(lo.getDate() - 29);
+  const loIso = lo.toISOString().slice(0, 10);
+  const list = el("wl-list");
+  list.textContent = "";
+  for (const e of [...data.days].reverse()) {
+    if (e.date < loIso) break;
+    const row = document.createElement("div");
+    row.className = "wl-row";
+    const dt = document.createElement("div");
+    dt.className = "dt";
+    dt.textContent = e.date.slice(5);
+    const names = document.createElement("div");
+    names.className = "names";
+    const wDiv = document.createElement("div");
+    if (e.watch.length) {
+      wDiv.textContent = "觀察：" + e.watch.join("、");
+    } else {
+      const none = document.createElement("span");
+      none.className = "none";
+      none.textContent = e.slight.length ? "無觀察類股" : "掛零";
+      wDiv.appendChild(none);
+    }
+    const sDiv = document.createElement("div");
+    sDiv.className = "muted";
+    sDiv.textContent = "稍微觀察：" + (e.slight.join("、") || "—");
+    names.append(wDiv, sDiv);
+    row.append(dt, names);
+    list.appendChild(row);
   }
 }
 
@@ -651,6 +792,11 @@ async function init() {
         valueFmt: v => "水位 " + v + "%",
       });
     }
+  });
+
+  // 觀察類股溫度計（本機 watchlist.py 產生；不存在則隱藏區塊）
+  fetch("data/watchlist.json").then(r => r.ok ? r.json() : null).catch(() => null).then(wl => {
+    if (wl && wl.days && wl.days.length) renderWatchlist(wl);
   });
 
   const sel = el("ind-select");
