@@ -74,6 +74,20 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   background: var(--mid); color: var(--text-secondary);
 }
 /* 觀察類股溫度計 */
+#wl-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+#wl-form input {
+  font: inherit; font-size: 13px; color: var(--text-primary);
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 10px;
+}
+#wl-form input[type="text"] { flex: 1 1 240px; min-width: 200px; }
+#wl-form input::placeholder { color: var(--text-muted); }
+#wl-form button {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  color: #fff; background: var(--accent); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 6px 16px;
+}
+#wl-form-msg { font-size: 12px; color: var(--text-muted); }
 .wl-alert { font-size: 13px; line-height: 1.7; margin-top: 8px; color: var(--text-secondary); }
 .wl-alert .warn { color: var(--hot); font-weight: 600; }
 #wl-calendars { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 14px; }
@@ -221,6 +235,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 
 <div class="card" id="watchlist-card" style="display:none;margin-bottom:16px">
   <div class="micro-label">投資癮觀察類股溫度計</div>
+  <form id="wl-form" style="display:none" autocomplete="off">
+    <input type="date" id="wl-date" aria-label="日期">
+    <input type="text" id="wl-watch" placeholder="觀察類股：6121新普(已漲停)、6525捷敏-KY…（留空＝無）">
+    <input type="text" id="wl-slight" placeholder="稍微觀察類股（留空＝無）">
+    <button type="submit">儲存</button>
+    <span id="wl-form-msg"></span>
+  </form>
   <div class="wl-alert" id="wl-alert"></div>
   <div id="wl-calendars"></div>
   <div class="wl-legend">
@@ -530,6 +551,45 @@ function renderWatchlist(data) {
   }
 }
 
+/* 本機輸入欄位：偵測到 serve.py 的 API 才顯示（公開站自動隱藏） */
+async function initWatchlistForm() {
+  try {
+    const r = await fetch("api/ping");
+    if (!r.ok) return;
+  } catch { return; }
+  el("watchlist-card").style.display = "";
+  const form = el("wl-form");
+  form.style.display = "";
+  const now = new Date();
+  el("wl-date").value = now.getFullYear() + "-" +
+    String(now.getMonth() + 1).padStart(2, "0") + "-" +
+    String(now.getDate()).padStart(2, "0");
+  form.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const msg = el("wl-form-msg");
+    msg.textContent = "儲存中…";
+    try {
+      const r = await fetch("api/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: el("wl-date").value,
+          watch: el("wl-watch").value,
+          slight: el("wl-slight").value,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "HTTP " + r.status);
+      renderWatchlist(data);
+      msg.textContent = "✓ 已儲存 " + el("wl-date").value;
+      el("wl-watch").value = "";
+      el("wl-slight").value = "";
+    } catch (e) {
+      msg.textContent = "儲存失敗：" + e.message;
+    }
+  });
+}
+
 /* ---------- 折線圖（手寫 SVG＋十字線 tooltip） ---------- */
 function renderLineChart(container, points, opts) {
   container.textContent = "";
@@ -798,6 +858,7 @@ async function init() {
   fetch("data/watchlist.json").then(r => r.ok ? r.json() : null).catch(() => null).then(wl => {
     if (wl && wl.days && wl.days.length) renderWatchlist(wl);
   });
+  initWatchlistForm();
 
   const sel = el("ind-select");
   for (const [id, m] of Object.entries(METER_OPTS)) {
