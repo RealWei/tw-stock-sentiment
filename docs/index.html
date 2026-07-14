@@ -23,6 +23,7 @@
   --cold-wash: rgba(99,91,255,0.08);
   --good-wash: rgba(33,122,70,0.12);   /* status 綠：有觀察類股 */
   --good: #1a7f4b;                     /* status 綠（文字級對比） */
+  --warn: #a85d00;                     /* 提醒橘：無觀察／掛零文字 */
   --tooltip-bg: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
@@ -44,6 +45,7 @@
     --cold-wash: rgba(122,115,255,0.13);
     --good-wash: rgba(62,207,119,0.16);
     --good: #45b877;
+    --warn: #f0a64a;
     --tooltip-bg: #1c2130;
   }
 }
@@ -109,8 +111,14 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   border-radius: 8px; padding: 6px 16px;
 }
 #hold-msg { font-size: 12px; color: var(--text-muted); }
-.hold-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--grid); font-size: 13px; flex-wrap: wrap; }
+.hold-row {
+  display: grid; grid-template-columns: minmax(140px, 170px) minmax(0, 1fr) 24px;
+  align-items: stretch; gap: 16px; padding: 12px 0;
+  border-bottom: 1px solid var(--grid); font-size: 13px;
+}
 .hold-row:last-child { border-bottom: none; }
+.hold-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.hold-name-wrap { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 .hold-drag {
   cursor: grab; color: var(--text-muted); flex: 0 0 auto;
   font-size: 14px; line-height: 1; user-select: none; padding: 2px 2px;
@@ -118,23 +126,39 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .hold-drag:active { cursor: grabbing; }
 .hold-row.dragging { opacity: 0.45; }
 .hold-name {
-  font-weight: 650; width: 6em; flex: 0 0 auto;
+  display: block; font-weight: 650;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.hold-code { color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.hold-code { display: block; margin-top: 2px; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.hold-details { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
+.hold-info-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; line-height: 1.55; }
+.hold-status-row { align-items: center; flex-wrap: wrap; }
 .hold-s { font-size: 12px; font-weight: 600; border-radius: 4px; padding: 1px 7px; }
 .hold-s.up { color: var(--good); background: var(--good-wash); }
 .hold-s.range { color: var(--text-secondary); background: var(--mid); }
 .hold-s.down { color: var(--hot); background: var(--hot-wash); }
-.hold-stats { color: var(--text-secondary); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.hold-stage-change {
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  border-radius: 4px; padding: 1px 7px;
+  color: var(--text-muted); background: var(--mid);
+}
+.hold-stage-change.up { color: var(--good); background: var(--good-wash); }
+.hold-stage-change.down { color: var(--hot); background: var(--hot-wash); }
+.hold-stats { min-width: 0; color: var(--text-secondary); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .hold-heat { color: var(--hot); font-weight: 600; font-size: 12px; }
-.hold-advice { flex-basis: 100%; font-size: 12px; color: var(--text-secondary); line-height: 1.55; padding-left: 22px; }
+.hold-advice { color: var(--text-secondary); font-size: 12px; }
 .hold-del {
-  margin-left: auto; cursor: pointer; border: none;
+  align-self: center; cursor: pointer; border: none;
   background: var(--mid); color: var(--text-muted); border-radius: 6px;
   width: 24px; height: 24px; font-size: 14px; line-height: 1;
 }
 .hold-del:hover { color: var(--hot); background: var(--hot-wash); }
+@media (max-width: 620px) {
+  .hold-row { grid-template-columns: minmax(0, 1fr) 24px; gap: 10px 12px; }
+  .hold-identity { grid-column: 1; }
+  .hold-details { grid-column: 1 / -1; padding-left: 24px; }
+  .hold-del { grid-column: 2; grid-row: 1; }
+}
 #mode-grid tr.cur td { background: var(--page); }
 #mode-grid tr.cur td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 .mode-rules { font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-top: 12px; }
@@ -180,11 +204,33 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .wl-row .names { color: var(--text-secondary); }
 .wl-row .names div + div { margin-top: 2px; }
 .wl-row .muted { color: var(--text-muted); }
-.wl-row .none { color: var(--hot); font-weight: 600; }
+.wl-row .none { color: var(--warn); font-weight: 600; }
 .wl-name { cursor: pointer; }
 .wl-name:hover { text-decoration: underline dotted; text-underline-offset: 3px; }
 .wl-name.freq2 { color: var(--good); font-weight: 600; }
 .wl-name.freq3 { color: var(--hot); font-weight: 600; }
+.wl-name.freq5 {
+  display: inline-block; font-weight: 700;
+  color: transparent; -webkit-text-fill-color: transparent;
+  background-image:
+    radial-gradient(ellipse at 12% 18%, #64d2ff 0 12%, transparent 38%),
+    radial-gradient(ellipse at 82% 16%, #5e5ce6 0 14%, transparent 42%),
+    radial-gradient(ellipse at 78% 82%, #ff375f 0 14%, transparent 42%),
+    radial-gradient(ellipse at 18% 84%, #ff9f0a 0 13%, transparent 40%),
+    linear-gradient(125deg, #64d2ff, #bf5af2 45%, #ff375f 72%, #ff9f0a);
+  background-size: 175% 175%, 165% 185%, 180% 170%, 170% 180%, 135% 135%;
+  background-position: 0% 10%, 100% 0%, 100% 100%, 0% 100%, 50% 50%;
+  background-clip: text; -webkit-background-clip: text;
+  animation: wl-name-mesh-drift 8s cubic-bezier(.45, 0, .55, 1) infinite alternate;
+}
+@keyframes wl-name-mesh-drift {
+  0%   { background-position: 0% 10%, 100% 0%, 100% 100%, 0% 100%, 50% 50%; }
+  48%  { background-position: 55% 0%, 45% 65%, 55% 40%, 35% 55%, 15% 70%; }
+  100% { background-position: 95% 60%, 15% 90%, 5% 25%, 90% 15%, 85% 20%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wl-name.freq5 { animation: none; background-position: 40% 30%, 70% 35%, 65% 75%, 25% 70%, 50% 50%; }
+}
 #wl-pop {
   position: absolute; z-index: 20; visibility: hidden;
   background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 10px;
@@ -287,40 +333,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 </header>
 <div id="error"></div>
 
-<div class="card" id="hero">
-  <div id="gauge-wrap"></div>
-  <div id="hero-text">
-    <div id="hero-score">–</div>
-    <div id="hero-zone"></div>
-    <div id="hero-advice"></div>
-    <div id="hero-meters"></div>
-  </div>
-</div>
-
-<div class="card" id="position-card" style="display:none;margin-bottom:16px">
-  <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
-    <div style="flex:0 0 auto">
-      <div class="micro-label">建議持股水位</div>
-      <div id="pos-score" style="font-size:44px;font-weight:650;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">–</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
-        <span class="delta-pill" id="pos-pill"></span>
-        <span id="pos-date" style="font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums"></span>
-      </div>
-    </div>
-    <div style="flex:1 1 280px;min-width:230px">
-      <div class="meter"><div class="seg cold"></div><div class="seg hot"></div><div class="dot" id="pos-dot"></div></div>
-      <div class="meter-scale"><span>0%（空手）</span><span>50%</span><span>100%（滿倉）</span></div>
-      <div id="pos-parts" style="font-size:13px;color:var(--text-secondary);margin-top:12px;font-variant-numeric:tabular-nums"></div>
-      <ul id="pos-reasons" style="font-size:12.5px;line-height:1.55;color:var(--text-secondary);margin:8px 0 0;padding-left:18px"></ul>
-    </div>
-  </div>
-</div>
-
-<div class="card chart-card" id="pos-chart-card" style="display:none">
-  <div class="chart-head"><span class="chart-title">持股水位每日走勢（2026-01 起）</span></div>
-  <div class="chart-box" id="position-chart"></div>
-</div>
-
 <div class="card" id="mode-card" style="display:none;margin-bottom:16px">
   <div class="micro-label">加減碼導航（盤勢 × 個股九宮格）</div>
   <div id="mode-head">
@@ -374,6 +386,40 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   </div>
   <div class="wl-list-title">近 30 日名單</div>
   <div id="wl-list"></div>
+</div>
+
+<div class="card" id="hero">
+  <div id="gauge-wrap"></div>
+  <div id="hero-text">
+    <div id="hero-score">–</div>
+    <div id="hero-zone"></div>
+    <div id="hero-advice"></div>
+    <div id="hero-meters"></div>
+  </div>
+</div>
+
+<div class="card" id="position-card" style="display:none;margin-bottom:16px">
+  <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+    <div style="flex:0 0 auto">
+      <div class="micro-label">建議持股水位</div>
+      <div id="pos-score" style="font-size:44px;font-weight:650;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">–</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+        <span class="delta-pill" id="pos-pill"></span>
+        <span id="pos-date" style="font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums"></span>
+      </div>
+    </div>
+    <div style="flex:1 1 280px;min-width:230px">
+      <div class="meter"><div class="seg cold"></div><div class="seg hot"></div><div class="dot" id="pos-dot"></div></div>
+      <div class="meter-scale"><span>0%（空手）</span><span>50%</span><span>100%（滿倉）</span></div>
+      <div id="pos-parts" style="font-size:13px;color:var(--text-secondary);margin-top:12px;font-variant-numeric:tabular-nums"></div>
+      <ul id="pos-reasons" style="font-size:12.5px;line-height:1.55;color:var(--text-secondary);margin:8px 0 0;padding-left:18px"></ul>
+    </div>
+  </div>
+</div>
+
+<div class="card chart-card" id="pos-chart-card" style="display:none">
+  <div class="chart-head"><span class="chart-title">持股水位每日走勢（2026-01 起）</span></div>
+  <div class="chart-box" id="position-chart"></div>
 </div>
 
 <div id="cards"></div>
@@ -682,12 +728,40 @@ function renderHoldings(data) {
     const codeEl = document.createElement("span");
     codeEl.className = "hold-code";
     codeEl.textContent = it.code;
+    const identity = document.createElement("div");
+    identity.className = "hold-identity";
+    const nameWrap = document.createElement("div");
+    nameWrap.className = "hold-name-wrap";
+    nameWrap.append(name, codeEl);
+    identity.append(drag, nameWrap);
     const s = document.createElement("span");
     s.className = "hold-s " + it.S;
     s.textContent = it.s_label;
+    const stage = document.createElement("span");
+    const stageNames = { up: "上漲", range: "盤整", down: "下跌" };
+    const stageRank = { up: 2, range: 1, down: 0 };
+    if (!it.S_prev) {
+      stage.className = "hold-stage-change";
+      stage.textContent = "較前日 —";
+      stage.title = "下次每日刷新後顯示階段變化";
+    } else if (it.S_prev === it.S) {
+      stage.className = "hold-stage-change";
+      stage.textContent = "較前日 — 未變";
+      stage.title = `階段維持${stageNames[it.S]}`;
+    } else {
+      const direction = stageRank[it.S] > stageRank[it.S_prev] ? "up" : "down";
+      stage.className = "hold-stage-change " + direction;
+      stage.textContent = `較前日 ${direction === "up" ? "↗" : "↘"} ${stageNames[it.S_prev]}→${stageNames[it.S]}`;
+      stage.title = `前一交易日：${it.s_prev_label}；今日：${it.s_label}`;
+    }
     const lvl = document.createElement("span");
     lvl.className = "lvl " + it.maxL.toLowerCase();
     lvl.textContent = "上限 " + it.maxL;
+    const details = document.createElement("div");
+    details.className = "hold-details";
+    const statusRow = document.createElement("div");
+    statusRow.className = "hold-info-row hold-status-row";
+    statusRow.append(lvl, s, stage);
     const stats = document.createElement("span");
     stats.className = "hold-stats";
     stats.textContent =
@@ -695,12 +769,18 @@ function renderHoldings(data) {
       (it.bias_pr != null ? `（分位 ${it.bias_pr}%）` : "") +
       (it.chg5 != null ? `｜5日 ${it.chg5 >= 0 ? "+" : ""}${it.chg5}%` : "") +
       (it.strongest ? "｜5＞20＞60 最強型" : it.weakest ? "｜60＞20＞5 最弱型" : "");
-    row.append(drag, name, codeEl, s, lvl, stats);
+    const techRow = document.createElement("div");
+    techRow.className = "hold-info-row hold-tech-row";
+    techRow.appendChild(stats);
+    details.append(statusRow, techRow);
     if (it.heat || it.churn) {
       const h = document.createElement("span");
       h.className = "hold-heat";
       h.textContent = [it.heat, it.churn ? "爆量滯漲" : ""].filter(Boolean).join("｜");
-      row.appendChild(h);
+      const heatRow = document.createElement("div");
+      heatRow.className = "hold-info-row";
+      heatRow.appendChild(h);
+      details.appendChild(heatRow);
     }
     const del = document.createElement("button");
     del.className = "hold-del";
@@ -719,13 +799,16 @@ function renderHoldings(data) {
         del.disabled = false;
       }
     });
-    row.appendChild(del);
     if (it.advice) {
-      const adv = document.createElement("div");
+      const adv = document.createElement("span");
       adv.className = "hold-advice";
-      adv.textContent = "📋 " + it.advice;
-      row.appendChild(adv);
+      adv.textContent = it.advice;
+      const adviceRow = document.createElement("div");
+      adviceRow.className = "hold-info-row";
+      adviceRow.appendChild(adv);
+      details.appendChild(adviceRow);
     }
+    row.append(identity, details, del);
     list.appendChild(row);
   }
 }
@@ -893,13 +976,14 @@ function renderWatchlist(data) {
     wrap.appendChild(cal);
   }
 
-  // 個股頻率標色：近半年（觀察＋稍微合計）2 次＝綠、3 次以上＝紅；點擊開日期 popover
+  // 個股頻率標色：近半年（觀察＋稍微合計）2 次＝綠、3–4 次＝紅、5 次以上＝動態 mesh 漸層
   const freq = data.counts || {};
   function nameSpan(n) {
     const s = document.createElement("span");
     s.className = "wl-name";
     const hits = freq[n] || [];
-    if (hits.length >= 3) s.classList.add("freq3");
+    if (hits.length >= 5) s.classList.add("freq5");
+    else if (hits.length >= 3) s.classList.add("freq3");
     else if (hits.length === 2) s.classList.add("freq2");
     s.textContent = n;
     s.addEventListener("click", ev => {
