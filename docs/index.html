@@ -111,7 +111,11 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 #hold-msg { font-size: 12px; color: var(--text-muted); }
 .hold-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--grid); font-size: 13px; flex-wrap: wrap; }
 .hold-row:last-child { border-bottom: none; }
-.hold-name { font-weight: 650; min-width: 104px; }
+.hold-name {
+  font-weight: 650; width: 6em; flex: 0 0 auto;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hold-code { color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
 .hold-s { font-size: 12px; font-weight: 600; border-radius: 4px; padding: 1px 7px; }
 .hold-s.up { color: var(--good); background: var(--good-wash); }
 .hold-s.range { color: var(--text-secondary); background: var(--mid); }
@@ -337,7 +341,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   <div id="hold-section" style="display:none;margin-top:16px">
     <div class="micro-label">我的持股（技術狀態每日更新）</div>
     <form id="hold-form" style="display:none" autocomplete="off">
-      <input type="text" id="hold-input" placeholder="新增持股：2330台積電（名稱可省略，上市/上櫃自動判別）">
+      <input type="text" id="hold-input" placeholder="新增持股：輸入代號或中文名稱（如 2330 或 台積電）">
       <button type="submit">新增</button>
       <span id="hold-msg"></span>
     </form>
@@ -624,7 +628,11 @@ function renderHoldings(data) {
     row.className = "hold-row";
     const name = document.createElement("span");
     name.className = "hold-name";
-    name.textContent = it.code + " " + (it.name || "");
+    name.textContent = it.name || it.code;
+    name.title = it.code + " " + (it.name || "");
+    const codeEl = document.createElement("span");
+    codeEl.className = "hold-code";
+    codeEl.textContent = it.code;
     const s = document.createElement("span");
     s.className = "hold-s " + it.S;
     s.textContent = it.s_label;
@@ -638,7 +646,7 @@ function renderHoldings(data) {
       (it.bias_pr != null ? `（分位 ${it.bias_pr}%）` : "") +
       (it.chg5 != null ? `｜5日 ${it.chg5 >= 0 ? "+" : ""}${it.chg5}%` : "") +
       (it.strongest ? "｜5＞20＞60 最強型" : it.weakest ? "｜60＞20＞5 最弱型" : "");
-    row.append(name, s, lvl, stats);
+    row.append(name, codeEl, s, lvl, stats);
     if (it.heat) {
       const h = document.createElement("span");
       h.className = "hold-heat";
