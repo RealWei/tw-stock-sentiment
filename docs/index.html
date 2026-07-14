@@ -22,6 +22,7 @@
   --hot-wash: rgba(223,27,65,0.07);
   --cold-wash: rgba(99,91,255,0.08);
   --good-wash: rgba(33,122,70,0.12);   /* status 綠：有觀察類股 */
+  --good: #1a7f4b;                     /* status 綠（文字級對比） */
   --tooltip-bg: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
@@ -42,6 +43,7 @@
     --hot-wash: rgba(242,85,90,0.11);
     --cold-wash: rgba(122,115,255,0.13);
     --good-wash: rgba(62,207,119,0.16);
+    --good: #45b877;
     --tooltip-bg: #1c2130;
   }
 }
@@ -117,6 +119,9 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .wl-row .names div + div { margin-top: 2px; }
 .wl-row .muted { color: var(--text-muted); }
 .wl-row .none { color: var(--hot); font-weight: 600; }
+.wl-name[title] { cursor: help; }
+.wl-name.freq2 { color: var(--good); font-weight: 600; }
+.wl-name.freq3 { color: var(--hot); font-weight: 600; }
 /* 總分區 */
 #hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
 #gauge-wrap { flex: 0 0 auto; }
@@ -522,6 +527,26 @@ function renderWatchlist(data) {
     wrap.appendChild(cal);
   }
 
+  // 個股頻率標色：今年（觀察＋稍微合計）2 次＝綠、3 次以上＝紅；hover 顯示列入日期
+  const freq = data.counts || {};
+  function nameSpan(n) {
+    const s = document.createElement("span");
+    s.className = "wl-name";
+    const dates = freq[n] || [];
+    if (dates.length >= 3) s.classList.add("freq3");
+    else if (dates.length === 2) s.classList.add("freq2");
+    s.title = `今年列入 ${dates.length || 1} 次：` +
+      (dates.length ? dates.map(d => d.slice(5)).join("、") : "（僅本次）");
+    s.textContent = n;
+    return s;
+  }
+  function fillNames(div, arr) {
+    arr.forEach((n, i) => {
+      if (i) div.appendChild(document.createTextNode("、"));
+      div.appendChild(nameSpan(n));
+    });
+  }
+
   const lo = new Date(latest);
   lo.setDate(lo.getDate() - 29);
   const loIso = lo.toISOString().slice(0, 10);
@@ -538,7 +563,8 @@ function renderWatchlist(data) {
     names.className = "names";
     const wDiv = document.createElement("div");
     if (e.watch.length) {
-      wDiv.textContent = "觀察：" + e.watch.join("、");
+      wDiv.appendChild(document.createTextNode("觀察："));
+      fillNames(wDiv, e.watch);
     } else {
       const none = document.createElement("span");
       none.className = "none";
@@ -547,7 +573,9 @@ function renderWatchlist(data) {
     }
     const sDiv = document.createElement("div");
     sDiv.className = "muted";
-    sDiv.textContent = "稍微觀察：" + (e.slight.join("、") || "—");
+    sDiv.appendChild(document.createTextNode("稍微觀察："));
+    if (e.slight.length) fillNames(sDiv, e.slight);
+    else sDiv.appendChild(document.createTextNode("—"));
     names.append(wDiv, sDiv);
     row.append(dt, names);
     list.appendChild(row);
