@@ -111,6 +111,12 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 #hold-msg { font-size: 12px; color: var(--text-muted); }
 .hold-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--grid); font-size: 13px; flex-wrap: wrap; }
 .hold-row:last-child { border-bottom: none; }
+.hold-drag {
+  cursor: grab; color: var(--text-muted); flex: 0 0 auto;
+  font-size: 14px; line-height: 1; user-select: none; padding: 2px 2px;
+}
+.hold-drag:active { cursor: grabbing; }
+.hold-row.dragging { opacity: 0.45; }
 .hold-name {
   font-weight: 650; width: 6em; flex: 0 0 auto;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -616,16 +622,58 @@ function renderModeCard(mode) {
 }
 
 /* ---------- 我的持股（技術狀態＋九宮格上限＋過熱） ---------- */
+function initHoldDrag() {
+  const list = el("hold-list");
+  if (list.dataset.dnd) return;
+  list.dataset.dnd = "1";
+  list.addEventListener("dragover", ev => {
+    ev.preventDefault();
+    const dragging = list.querySelector(".hold-row.dragging");
+    if (!dragging) return;
+    const rows = [...list.querySelectorAll(".hold-row:not(.dragging)")];
+    const next = rows.find(r => {
+      const box = r.getBoundingClientRect();
+      return ev.clientY < box.top + box.height / 2;
+    });
+    if (next) list.insertBefore(dragging, next);
+    else list.appendChild(dragging);
+  });
+}
+
 function renderHoldings(data) {
   const items = (data && data.items) || [];
   if (items.length || el("hold-form").style.display !== "none") {
     el("hold-section").style.display = "";
   }
+  initHoldDrag();
   const list = el("hold-list");
   list.textContent = "";
   for (const it of items) {
     const row = document.createElement("div");
     row.className = "hold-row";
+    row.dataset.code = it.code;
+    const drag = document.createElement("span");
+    drag.className = "hold-drag";
+    drag.textContent = "⠿";
+    drag.title = "拖拉排序";
+    drag.addEventListener("mousedown", () => { row.draggable = true; });
+    row.addEventListener("dragstart", ev => {
+      row.classList.add("dragging");
+      ev.dataTransfer.effectAllowed = "move";
+    });
+    row.addEventListener("dragend", async () => {
+      row.classList.remove("dragging");
+      row.draggable = false;
+      const order = [...list.querySelectorAll(".hold-row")].map(r => r.dataset.code);
+      try {
+        const r = await fetch("api/holdings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order }),
+        });
+        renderHoldings(await r.json());
+      } catch (e) { /* 保留目前 DOM 順序，下次操作再存 */ }
+    });
     const name = document.createElement("span");
     name.className = "hold-name";
     name.textContent = it.name || it.code;
@@ -646,7 +694,7 @@ function renderHoldings(data) {
       (it.bias_pr != null ? `（分位 ${it.bias_pr}%）` : "") +
       (it.chg5 != null ? `｜5日 ${it.chg5 >= 0 ? "+" : ""}${it.chg5}%` : "") +
       (it.strongest ? "｜5＞20＞60 最強型" : it.weakest ? "｜60＞20＞5 最弱型" : "");
-    row.append(name, codeEl, s, lvl, stats);
+    row.append(drag, name, codeEl, s, lvl, stats);
     if (it.heat) {
       const h = document.createElement("span");
       h.className = "hold-heat";
