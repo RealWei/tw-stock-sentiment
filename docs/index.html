@@ -88,13 +88,42 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 #mode-transition { display: none; font-size: 13px; font-weight: 600; color: var(--hot); margin-top: 10px; }
 #mode-grid { margin-top: 14px; }
 #mode-grid td, #mode-grid th { font-size: 12.5px; vertical-align: top; }
-#mode-grid td .lvl {
+#mode-grid td .lvl, .hold-row .lvl {
   display: inline-block; font-weight: 650; font-size: 12px; border-radius: 5px;
   padding: 1px 7px; margin-right: 6px; background: var(--mid); color: var(--text-secondary);
 }
-#mode-grid td .lvl.l3 { background: var(--cold-wash); color: var(--accent); }
-#mode-grid td .lvl.l2 { background: var(--good-wash); color: var(--good); }
-#mode-grid td .lvl.l0 { background: var(--hot-wash); color: var(--hot); }
+#mode-grid td .lvl.l3, .hold-row .lvl.l3 { background: var(--cold-wash); color: var(--accent); }
+#mode-grid td .lvl.l2, .hold-row .lvl.l2 { background: var(--good-wash); color: var(--good); }
+#mode-grid td .lvl.l0, .hold-row .lvl.l0 { background: var(--hot-wash); color: var(--hot); }
+/* 我的持股 */
+#hold-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+#hold-form input {
+  font: inherit; font-size: 13px; color: var(--text-primary);
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 10px; flex: 1 1 240px; min-width: 200px;
+}
+#hold-form input::placeholder { color: var(--text-muted); }
+#hold-form button {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  color: #fff; background: var(--accent); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 6px 16px;
+}
+#hold-msg { font-size: 12px; color: var(--text-muted); }
+.hold-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--grid); font-size: 13px; flex-wrap: wrap; }
+.hold-row:last-child { border-bottom: none; }
+.hold-name { font-weight: 650; min-width: 104px; }
+.hold-s { font-size: 12px; font-weight: 600; border-radius: 4px; padding: 1px 7px; }
+.hold-s.up { color: var(--good); background: var(--good-wash); }
+.hold-s.range { color: var(--text-secondary); background: var(--mid); }
+.hold-s.down { color: var(--hot); background: var(--hot-wash); }
+.hold-stats { color: var(--text-secondary); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.hold-heat { color: var(--hot); font-weight: 600; font-size: 12px; }
+.hold-del {
+  margin-left: auto; cursor: pointer; border: none;
+  background: var(--mid); color: var(--text-muted); border-radius: 6px;
+  width: 24px; height: 24px; font-size: 14px; line-height: 1;
+}
+.hold-del:hover { color: var(--hot); background: var(--hot-wash); }
 #mode-grid tr.cur td { background: var(--page); }
 #mode-grid tr.cur td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 .mode-rules { font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-top: 12px; }
@@ -304,6 +333,15 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <b>S 判定（收盤後）</b>：S↑＝收盤在 20 日線上、5MA＞20MA、20MA 未下彎（5＞20＞60 最強）；S↓＝反之（60＞20＞5 最弱）；看不懂一律歸盤整。<br>
     <b>級別</b>：L1＝20%、L2＝70%、L3＝100% × P0（P0＝單筆風險 0.5% 淨值 ÷ 停損距離，上限淨值 10%）。<br>
     <b>鐵律</b>：只有帳面未實現獲利才加碼｜一天最多升一級｜降級立即、升級漸進｜減碼後進先出（L3→L2→L1）｜下跌不是加碼理由。
+  </div>
+  <div id="hold-section" style="display:none;margin-top:16px">
+    <div class="micro-label">我的持股（技術狀態每日更新）</div>
+    <form id="hold-form" style="display:none" autocomplete="off">
+      <input type="text" id="hold-input" placeholder="新增持股：2330台積電（名稱可省略，上市/上櫃自動判別）">
+      <button type="submit">新增</button>
+      <span id="hold-msg"></span>
+    </form>
+    <div id="hold-list"></div>
   </div>
 </div>
 
@@ -573,6 +611,88 @@ function renderModeCard(mode) {
   }
 }
 
+/* ---------- 我的持股（技術狀態＋九宮格上限＋過熱） ---------- */
+function renderHoldings(data) {
+  const items = (data && data.items) || [];
+  if (items.length || el("hold-form").style.display !== "none") {
+    el("hold-section").style.display = "";
+  }
+  const list = el("hold-list");
+  list.textContent = "";
+  for (const it of items) {
+    const row = document.createElement("div");
+    row.className = "hold-row";
+    const name = document.createElement("span");
+    name.className = "hold-name";
+    name.textContent = it.code + " " + (it.name || "");
+    const s = document.createElement("span");
+    s.className = "hold-s " + it.S;
+    s.textContent = it.s_label;
+    const lvl = document.createElement("span");
+    lvl.className = "lvl " + it.maxL.toLowerCase();
+    lvl.textContent = "上限 " + it.maxL;
+    const stats = document.createElement("span");
+    stats.className = "hold-stats";
+    stats.textContent =
+      `收盤 ${it.close?.toLocaleString()}｜乖離20 ${it.bias20 >= 0 ? "+" : ""}${it.bias20}%` +
+      (it.bias_pr != null ? `（分位 ${it.bias_pr}%）` : "") +
+      (it.chg5 != null ? `｜5日 ${it.chg5 >= 0 ? "+" : ""}${it.chg5}%` : "") +
+      (it.strongest ? "｜5＞20＞60 最強型" : it.weakest ? "｜60＞20＞5 最弱型" : "");
+    row.append(name, s, lvl, stats);
+    if (it.heat) {
+      const h = document.createElement("span");
+      h.className = "hold-heat";
+      h.textContent = it.heat;
+      row.appendChild(h);
+    }
+    const del = document.createElement("button");
+    del.className = "hold-del";
+    del.textContent = "✕";
+    del.title = "移除 " + it.code;
+    del.addEventListener("click", async () => {
+      del.disabled = true;
+      try {
+        const r = await fetch("api/holdings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remove: it.code }),
+        });
+        renderHoldings(await r.json());
+      } catch (e) {
+        del.disabled = false;
+      }
+    });
+    row.appendChild(del);
+    list.appendChild(row);
+  }
+}
+
+function initHoldForm() {
+  const form = el("hold-form");
+  form.style.display = "flex";
+  el("hold-section").style.display = "";
+  form.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const input = el("hold-input"), msg = el("hold-msg");
+    if (!input.value.trim()) return;
+    msg.textContent = "抓取日線中…";
+    try {
+      const r = await fetch("api/holdings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ add: input.value.trim() }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "HTTP " + r.status);
+      renderHoldings(data);
+      msg.textContent = "✓ 已新增";
+      input.value = "";
+    } catch (e) {
+      msg.textContent = "失敗：" + e.message;
+    }
+  });
+}
+
 /* ---------- 觀察類股日期 popover ---------- */
 function getWlPop() {
   let pop = el("wl-pop");
@@ -774,6 +894,7 @@ async function initWatchlistForm() {
     if (!r.ok) return;
   } catch { return; }
   el("watchlist-card").style.display = "";
+  initHoldForm();
   const form = el("wl-form");
   form.style.display = "";
   const now = new Date();
@@ -1073,6 +1194,10 @@ async function init() {
   // 加減碼導航（chipwatch market_mode.py 產生；不存在則隱藏區塊）
   fetch("data/market_mode.json").then(r => r.ok ? r.json() : null).catch(() => null).then(m => {
     if (m && m.M) renderModeCard(m);
+    // 持股清單（個人資料，gitignored；公開站無此檔自動隱藏）
+    fetch("data/holdings.json").then(r => r.ok ? r.json() : null).catch(() => null).then(h => {
+      if (h && h.items && h.items.length) renderHoldings(h);
+    });
   });
 
   // 觀察類股溫度計（本機 watchlist.py 產生；不存在則隱藏區塊）
