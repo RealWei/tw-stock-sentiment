@@ -128,6 +128,7 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .hold-s.down { color: var(--hot); background: var(--hot-wash); }
 .hold-stats { color: var(--text-secondary); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .hold-heat { color: var(--hot); font-weight: 600; font-size: 12px; }
+.hold-advice { flex-basis: 100%; font-size: 12px; color: var(--text-secondary); line-height: 1.55; padding-left: 22px; }
 .hold-del {
   margin-left: auto; cursor: pointer; border: none;
   background: var(--mid); color: var(--text-muted); border-radius: 6px;
@@ -575,8 +576,8 @@ function renderSignals(data) {
 /* ---------- 加減碼導航（盤勢 × 個股九宮格） ---------- */
 const MODE_GRID = [
   ["up", "上漲 M↑", [["L3", "主力操作區"], ["L1", "有效突破轉 S↑ 才可升 L2"], ["L0", "不接刀、不攤平"]]],
-  ["range", "盤整 M↔", [["L2", "汰弱留強"], ["L1", "箱底停損明確或突破時試單"], ["L0", "—"]]],
-  ["down", "下跌 M↓", [["L1", "僅相對強勢＋族群領頭，限現股"], ["L0", "新單 L0；舊單最高 L1，反彈降碼"], ["L0", "破停損全退"]]],
+  ["range", "盤整 M↔", [["L2", "汰弱留強；過熱股退 L3 保 L2、不新增不追"], ["L1", "箱底停損明確或突破時試單"], ["L0", "—"]]],
+  ["down", "下跌 M↓", [["L1", "僅相對強勢＋族群領頭，限現股；過熱抗跌股防補跌"], ["L0", "新單 L0；舊單最高 L1，反彈降碼"], ["L0", "破停損全退"]]],
 ];
 
 function renderModeCard(mode) {
@@ -695,10 +696,10 @@ function renderHoldings(data) {
       (it.chg5 != null ? `｜5日 ${it.chg5 >= 0 ? "+" : ""}${it.chg5}%` : "") +
       (it.strongest ? "｜5＞20＞60 最強型" : it.weakest ? "｜60＞20＞5 最弱型" : "");
     row.append(drag, name, codeEl, s, lvl, stats);
-    if (it.heat) {
+    if (it.heat || it.churn) {
       const h = document.createElement("span");
       h.className = "hold-heat";
-      h.textContent = it.heat;
+      h.textContent = [it.heat, it.churn ? "爆量滯漲" : ""].filter(Boolean).join("｜");
       row.appendChild(h);
     }
     const del = document.createElement("button");
@@ -719,6 +720,12 @@ function renderHoldings(data) {
       }
     });
     row.appendChild(del);
+    if (it.advice) {
+      const adv = document.createElement("div");
+      adv.className = "hold-advice";
+      adv.textContent = "📋 " + it.advice;
+      row.appendChild(adv);
+    }
     list.appendChild(row);
   }
 }
