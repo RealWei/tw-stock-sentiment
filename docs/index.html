@@ -77,6 +77,28 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   border-radius: 999px; padding: 2px 9px;
   background: var(--mid); color: var(--text-secondary);
 }
+/* 加減碼導航 */
+#mode-head { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-top: 10px; }
+#mode-state { font-size: 30px; font-weight: 650; line-height: 1.2; letter-spacing: -0.01em; }
+#mode-state.m-up { color: var(--good); }
+#mode-state.m-range { color: var(--text-secondary); }
+#mode-state.m-down { color: var(--hot); }
+#mode-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+#mode-basis { font-size: 12.5px; color: var(--text-secondary); margin-top: 8px; font-variant-numeric: tabular-nums; }
+#mode-transition { display: none; font-size: 13px; font-weight: 600; color: var(--hot); margin-top: 10px; }
+#mode-grid { margin-top: 14px; }
+#mode-grid td, #mode-grid th { font-size: 12.5px; vertical-align: top; }
+#mode-grid td .lvl {
+  display: inline-block; font-weight: 650; font-size: 12px; border-radius: 5px;
+  padding: 1px 7px; margin-right: 6px; background: var(--mid); color: var(--text-secondary);
+}
+#mode-grid td .lvl.l3 { background: var(--cold-wash); color: var(--accent); }
+#mode-grid td .lvl.l2 { background: var(--good-wash); color: var(--good); }
+#mode-grid td .lvl.l0 { background: var(--hot-wash); color: var(--hot); }
+#mode-grid tr.cur td { background: var(--page); }
+#mode-grid tr.cur td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.mode-rules { font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-top: 12px; }
+.mode-rules b { color: var(--text-secondary); font-weight: 600; }
 /* 觀察類股溫度計 */
 #wl-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
 #wl-form input {
@@ -239,6 +261,32 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 <div class="card chart-card" id="pos-chart-card" style="display:none">
   <div class="chart-head"><span class="chart-title">持股水位每日走勢（2026-01 起）</span></div>
   <div class="chart-box" id="position-chart"></div>
+</div>
+
+<div class="card" id="mode-card" style="display:none;margin-bottom:16px">
+  <div class="micro-label">加減碼導航（盤勢 × 個股九宮格）</div>
+  <div id="mode-head">
+    <div style="flex:0 0 auto">
+      <div id="mode-state">–</div>
+      <div id="mode-sub"></div>
+    </div>
+    <div style="flex:1 1 300px;min-width:240px">
+      <span class="delta-pill" id="mode-cap"></span>
+      <div id="mode-basis"></div>
+    </div>
+  </div>
+  <div id="mode-transition"></div>
+  <div style="overflow-x:auto">
+    <table id="mode-grid">
+      <thead><tr><th>大盤＼個股</th><th>上漲 S↑</th><th>盤整 S↔</th><th>下跌 S↓</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="mode-rules">
+    <b>S 判定（收盤後）</b>：S↑＝收盤在 20 日線上、5MA＞20MA、20MA 未下彎（5＞20＞60 最強）；S↓＝反之（60＞20＞5 最弱）；看不懂一律歸盤整。<br>
+    <b>級別</b>：L1＝20%、L2＝70%、L3＝100% × P0（P0＝單筆風險 0.5% 淨值 ÷ 停損距離，上限淨值 10%）。<br>
+    <b>鐵律</b>：只有帳面未實現獲利才加碼｜一天最多升一級｜降級立即、升級漸進｜減碼後進先出（L3→L2→L1）｜下跌不是加碼理由。
+  </div>
 </div>
 
 <div class="card" id="watchlist-card" style="display:none;margin-bottom:16px">
@@ -455,6 +503,55 @@ function renderSignals(data) {
     }
     card.appendChild(list);
     wrap.appendChild(card);
+  }
+}
+
+/* ---------- 加減碼導航（盤勢 × 個股九宮格） ---------- */
+const MODE_GRID = [
+  ["up", "上漲 M↑", [["L3", "主力操作區"], ["L1", "有效突破轉 S↑ 才可升 L2"], ["L0", "不接刀、不攤平"]]],
+  ["range", "盤整 M↔", [["L2", "汰弱留強"], ["L1", "箱底停損明確或突破時試單"], ["L0", "—"]]],
+  ["down", "下跌 M↓", [["L1", "僅相對強勢＋族群領頭，限現股"], ["L0", "新單 L0；舊單最高 L1，反彈降碼"], ["L0", "破停損全退"]]],
+];
+
+function renderModeCard(mode) {
+  el("mode-card").style.display = "";
+  const st = el("mode-state");
+  st.textContent = mode.label;
+  st.className = "m-" + mode.M;
+  el("mode-sub").textContent = `連續第 ${mode.streak} 個交易日｜資料日 ${mode.date}`;
+  el("mode-cap").textContent = `全帳戶多單曝險上限 ${mode.cap}%`;
+  const b = mode.basis || {};
+  if (b.close) {
+    el("mode-basis").textContent =
+      `加權 ${b.close.toLocaleString()}｜5MA ${Math.round(b.ma5).toLocaleString()}｜` +
+      `20MA ${Math.round(b.ma20).toLocaleString()}（斜率 ${b.ma20_slope >= 0 ? "+" : ""}${Math.round(b.ma20_slope)}）｜` +
+      `60MA ${Math.round(b.ma60).toLocaleString()}` +
+      (b.strongest ? "｜5＞20＞60 最強型" : b.weakest ? "｜60＞20＞5 最弱型" : "");
+  }
+  if (mode.transition) {
+    const tr = el("mode-transition");
+    tr.style.display = "block";
+    tr.textContent = `⚠️ 盤勢變化，下一交易日動作：${mode.transition}`;
+  }
+  const tbody = el("mode-grid").querySelector("tbody");
+  tbody.textContent = "";
+  for (const [key, label, cells] of MODE_GRID) {
+    const tr = document.createElement("tr");
+    if (key === mode.M) tr.className = "cur";
+    const th = document.createElement("td");
+    th.textContent = label + (key === mode.M ? "（現在）" : "");
+    th.style.fontWeight = key === mode.M ? "650" : "400";
+    tr.appendChild(th);
+    for (const [lvl, note] of cells) {
+      const td = document.createElement("td");
+      const chip = document.createElement("span");
+      chip.className = "lvl " + lvl.toLowerCase();
+      chip.textContent = lvl;
+      td.appendChild(chip);
+      td.appendChild(document.createTextNode(note));
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
   }
 }
 
@@ -883,6 +980,11 @@ async function init() {
         valueFmt: v => "水位 " + v + "%",
       });
     }
+  });
+
+  // 加減碼導航（chipwatch market_mode.py 產生；不存在則隱藏區塊）
+  fetch("data/market_mode.json").then(r => r.ok ? r.json() : null).catch(() => null).then(m => {
+    if (m && m.M) renderModeCard(m);
   });
 
   // 觀察類股溫度計（本機 watchlist.py 產生；不存在則隱藏區塊）
