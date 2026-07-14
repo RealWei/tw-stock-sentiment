@@ -141,9 +141,27 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .wl-row .names div + div { margin-top: 2px; }
 .wl-row .muted { color: var(--text-muted); }
 .wl-row .none { color: var(--hot); font-weight: 600; }
-.wl-name[title] { cursor: help; }
+.wl-name { cursor: pointer; }
+.wl-name:hover { text-decoration: underline dotted; text-underline-offset: 3px; }
 .wl-name.freq2 { color: var(--good); font-weight: 600; }
 .wl-name.freq3 { color: var(--hot); font-weight: 600; }
+#wl-pop {
+  position: absolute; z-index: 20; visibility: hidden;
+  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18); padding: 12px 16px;
+  min-width: 200px; max-width: 280px; max-height: 320px; overflow-y: auto;
+}
+#wl-pop .wp-name { font-size: 14px; font-weight: 650; }
+#wl-pop .wp-count { font-size: 12px; color: var(--text-muted); margin: 2px 0 8px; }
+#wl-pop .wp-row {
+  display: flex; justify-content: space-between; gap: 16px;
+  font-size: 13px; line-height: 1.9; font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--grid);
+}
+#wl-pop .wp-row:last-child { border-bottom: none; }
+#wl-pop .wp-type { font-size: 11px; font-weight: 600; border-radius: 4px; padding: 1px 6px; align-self: center; }
+#wl-pop .wp-type.w { color: var(--accent); background: var(--cold-wash); }
+#wl-pop .wp-type.s { color: var(--text-muted); background: var(--mid); }
 /* 總分區 */
 #hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
 #gauge-wrap { flex: 0 0 auto; }
@@ -555,6 +573,74 @@ function renderModeCard(mode) {
   }
 }
 
+/* ---------- 觀察類股日期 popover ---------- */
+function getWlPop() {
+  let pop = el("wl-pop");
+  if (!pop) {
+    pop = document.createElement("div");
+    pop.id = "wl-pop";
+    document.body.appendChild(pop);
+    document.addEventListener("click", () => { pop.style.visibility = "hidden"; });
+    document.addEventListener("keydown", ev => {
+      if (ev.key === "Escape") pop.style.visibility = "hidden";
+    });
+    pop.addEventListener("click", ev => ev.stopPropagation());
+  }
+  return pop;
+}
+
+function showWlPop(anchor, name, hits) {
+  const pop = getWlPop();
+  if (pop.dataset.for === name && pop.style.visibility === "visible") {
+    pop.style.visibility = "hidden";
+    return;
+  }
+  pop.dataset.for = name;
+  pop.textContent = "";
+  const title = document.createElement("div");
+  title.className = "wp-name";
+  title.textContent = name;
+  const count = document.createElement("div");
+  count.className = "wp-count";
+  count.textContent = `近半年列入 ${hits.length || 1} 次`;
+  pop.append(title, count);
+  const DOW = ["日", "一", "二", "三", "四", "五", "六"];
+  for (const [d, t] of (hits.length ? hits : [])) {
+    const row = document.createElement("div");
+    row.className = "wp-row";
+    const dt = document.createElement("span");
+    dt.textContent = `${d.slice(5)}（${DOW[new Date(d + "T00:00:00").getDay()]}）`;
+    const tag = document.createElement("span");
+    tag.className = "wp-type " + t;
+    tag.textContent = t === "w" ? "觀察" : "稍微";
+    row.append(dt, tag);
+    pop.appendChild(row);
+  }
+  if (!hits.length) {
+    const row = document.createElement("div");
+    row.className = "wp-row";
+    row.textContent = "（僅本次列入）";
+    pop.appendChild(row);
+  }
+  // 先顯示取得尺寸再定位（錨點下方，靠右超界則左移、靠底超界則翻上）
+  pop.style.visibility = "visible";
+  const a = anchor.getBoundingClientRect(), p = pop.getBoundingClientRect();
+  const vw = window.innerWidth || document.documentElement.clientWidth;
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  let left = a.left + window.scrollX;
+  if (left + p.width > window.scrollX + vw - 8) {
+    left = window.scrollX + vw - p.width - 8;
+  }
+  left = Math.max(left, window.scrollX + 8);
+  let top = a.bottom + window.scrollY + 6;
+  if (a.bottom + p.height + 12 > vh) {
+    top = a.top + window.scrollY - p.height - 6;
+    if (top < window.scrollY) top = a.bottom + window.scrollY + 6;
+  }
+  pop.style.left = left + "px";
+  pop.style.top = top + "px";
+}
+
 /* ---------- 觀察類股溫度計（雙月日曆＋近 30 日名單） ---------- */
 function renderWatchlist(data) {
   el("watchlist-card").style.display = "";
@@ -624,17 +710,19 @@ function renderWatchlist(data) {
     wrap.appendChild(cal);
   }
 
-  // 個股頻率標色：今年（觀察＋稍微合計）2 次＝綠、3 次以上＝紅；hover 顯示列入日期
+  // 個股頻率標色：近半年（觀察＋稍微合計）2 次＝綠、3 次以上＝紅；點擊開日期 popover
   const freq = data.counts || {};
   function nameSpan(n) {
     const s = document.createElement("span");
     s.className = "wl-name";
-    const dates = freq[n] || [];
-    if (dates.length >= 3) s.classList.add("freq3");
-    else if (dates.length === 2) s.classList.add("freq2");
-    s.title = `今年列入 ${dates.length || 1} 次：` +
-      (dates.length ? dates.map(d => d.slice(5)).join("、") : "（僅本次）");
+    const hits = freq[n] || [];
+    if (hits.length >= 3) s.classList.add("freq3");
+    else if (hits.length === 2) s.classList.add("freq2");
     s.textContent = n;
+    s.addEventListener("click", ev => {
+      ev.stopPropagation();
+      showWlPop(s, n, hits);
+    });
     return s;
   }
   function fillNames(div, arr) {
