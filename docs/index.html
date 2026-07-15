@@ -125,6 +125,8 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 }
 .hold-drag:active { cursor: grabbing; }
 .hold-row.dragging { opacity: 0.45; }
+.hold-name { cursor: pointer; }
+.hold-name:hover { text-decoration: underline dotted; text-underline-offset: 3px; }
 .hold-name {
   display: block; font-weight: 650;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -479,6 +481,7 @@ const RANGES = [["3M", 90], ["6M", 183], ["1Y", 365], ["2Y", 730], ["全部", In
 let rangeDays = 365;
 let seriesData = null;
 let latestData = null;
+let wlCountsByCode = null;  // 觀察名單次數（代號→日期清單），供持股清單共用 popover
 let currentInd = "meter_greed";
 
 const el = id => document.getElementById(id);
@@ -730,7 +733,11 @@ function renderHoldings(data) {
     const name = document.createElement("span");
     name.className = "hold-name";
     name.textContent = it.name || it.code;
-    name.title = it.code + " " + (it.name || "");
+    name.title = it.code + " " + (it.name || "") + "（點擊看觀察次數）";
+    name.addEventListener("click", ev => {
+      ev.stopPropagation();
+      showWlPop(name, it.code + " " + (it.name || ""), (wlCountsByCode || {})[it.code] || []);
+    });
     const codeEl = document.createElement("span");
     codeEl.className = "hold-code";
     codeEl.textContent = it.code;
@@ -890,7 +897,7 @@ function showWlPop(anchor, name, hits) {
   title.textContent = name;
   const count = document.createElement("div");
   count.className = "wp-count";
-  count.textContent = `近半年列入 ${hits.length || 1} 次`;
+  count.textContent = `近半年列入 ${hits.length} 次`;
   pop.append(title, count);
   const DOW = ["日", "一", "二", "三", "四", "五", "六"];
   for (const [d, t] of (hits.length ? hits : [])) {
@@ -907,7 +914,7 @@ function showWlPop(anchor, name, hits) {
   if (!hits.length) {
     const row = document.createElement("div");
     row.className = "wp-row";
-    row.textContent = "（僅本次列入）";
+    row.textContent = "（近半年未列入觀察名單）";
     pop.appendChild(row);
   }
   // 先顯示取得尺寸再定位（錨點下方，靠右超界則左移、靠底超界則翻上）
@@ -1000,6 +1007,12 @@ function renderWatchlist(data) {
 
   // 個股頻率標色：近半年（觀察＋稍微合計）2 次＝綠、3–4 次＝紅、5 次以上＝動態 mesh 漸層
   const freq = data.counts || {};
+  // 供持股清單以代號查觀察日期（點名稱開同一個 popover）
+  wlCountsByCode = {};
+  for (const [key, hits] of Object.entries(freq)) {
+    const c = (key.match(/^\d{4,6}/) || [])[0];
+    if (c) wlCountsByCode[c] = hits;
+  }
   const futSet = new Set(data.futures || []);
   function nameSpan(n) {
     const s = document.createElement("span");
