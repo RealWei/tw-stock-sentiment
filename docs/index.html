@@ -133,6 +133,16 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hold-code { display: block; margin-top: 2px; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.hold-lots {
+  display: block; margin-top: 2px; font-size: 11px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; cursor: pointer; user-select: none; white-space: nowrap;
+}
+.hold-lots:hover { color: var(--text-secondary); }
+.hold-lots input {
+  font: inherit; width: 4.5em; color: var(--text-primary);
+  background: var(--surface-1); border: 1px solid var(--accent); border-radius: 5px;
+  padding: 1px 4px;
+}
 .hold-details { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
 .hold-info-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; line-height: 1.55; }
 .hold-status-row { align-items: center; flex-wrap: wrap; }
@@ -699,8 +709,12 @@ function renderHoldings(data) {
     el("hold-section").style.display = "";
   }
   if (data && data.updated) {
-    el("hold-title").textContent = "我的持股（技術狀態 " + data.updated.slice(11, 16) +
+    let t = "我的持股（技術狀態 " + data.updated.slice(11, 16) +
       (data.intraday ? "・盤中即時" : "・收盤定版") + "）";
+    if (data.total_value) {
+      t += "｜總契約價值 " + (data.total_value / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + " 萬";
+    }
+    el("hold-title").textContent = t;
   }
   initHoldDrag();
   const list = el("hold-list");
@@ -742,11 +756,55 @@ function renderHoldings(data) {
     const codeEl = document.createElement("span");
     codeEl.className = "hold-code";
     codeEl.textContent = it.code;
+    // 持倉口數：雙擊進入編輯，Enter/失焦儲存、Esc 取消
+    const lotsEl = document.createElement("span");
+    lotsEl.className = "hold-lots";
+    const lotsText = () => {
+      const n = it.lots || 0;
+      let t = `持倉 ${n} 口`;
+      if (n && it.value) t += `（${(it.value / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 })} 萬）`;
+      return t;
+    };
+    lotsEl.textContent = lotsText();
+    lotsEl.title = "雙擊編輯持倉口數" + (it.shares ? `（每口 ${it.shares.toLocaleString()} 股）` : "（非期貨標的，不計契約價值）");
+    lotsEl.addEventListener("dblclick", ev => {
+      ev.stopPropagation();
+      if (lotsEl.querySelector("input")) return;
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "0";
+      input.value = it.lots || 0;
+      lotsEl.textContent = "";
+      lotsEl.append(input, document.createTextNode(" 口"));
+      input.focus();
+      input.select();
+      let done = false;
+      const commit = async () => {
+        if (done) return;
+        done = true;
+        const n = Math.max(0, parseInt(input.value, 10) || 0);
+        try {
+          const r = await fetch("api/holdings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lots: { code: it.code, lots: n } }),
+          });
+          renderHoldings(await r.json());
+        } catch (e) {
+          lotsEl.textContent = lotsText();
+        }
+      };
+      input.addEventListener("keydown", kev => {
+        if (kev.key === "Enter") commit();
+        if (kev.key === "Escape") { done = true; lotsEl.textContent = lotsText(); }
+      });
+      input.addEventListener("blur", commit);
+    });
     const identity = document.createElement("div");
     identity.className = "hold-identity";
     const nameWrap = document.createElement("div");
     nameWrap.className = "hold-name-wrap";
-    nameWrap.append(name, codeEl);
+    nameWrap.append(name, codeEl, lotsEl);
     identity.append(drag, nameWrap);
     const s = document.createElement("span");
     s.className = "hold-s " + it.S;
