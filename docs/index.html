@@ -753,19 +753,30 @@ function renderHoldings(data) {
     const stage = document.createElement("span");
     const stageNames = { up: "上漲", range: "盤整", down: "下跌" };
     const stageRank = { up: 2, range: 1, down: 0 };
+    const sChanged = it.S_prev && it.S_prev !== it.S;
+    const lChanged = it.maxL_prev && it.maxL_prev !== it.maxL;
     if (!it.S_prev) {
       stage.className = "hold-stage-change";
       stage.textContent = "較前日 —";
       stage.title = "下次每日刷新後顯示階段變化";
-    } else if (it.S_prev === it.S) {
+    } else if (!sChanged && !lChanged) {
       stage.className = "hold-stage-change";
       stage.textContent = "較前日 — 未變";
-      stage.title = `階段維持${stageNames[it.S]}`;
+      stage.title = `階段維持${stageNames[it.S]}、上限維持 ${it.maxL}`;
     } else {
-      const direction = stageRank[it.S] > stageRank[it.S_prev] ? "up" : "down";
+      // 升降方向：S 有變看 S；只有 L 變（盤勢升降級）看 L
+      const lRank = v => +String(v).slice(1);
+      const direction = sChanged
+        ? (stageRank[it.S] > stageRank[it.S_prev] ? "up" : "down")
+        : (lRank(it.maxL) > lRank(it.maxL_prev) ? "up" : "down");
       stage.className = "hold-stage-change " + direction;
-      stage.textContent = `較前日 ${direction === "up" ? "↗" : "↘"} ${stageNames[it.S_prev]}→${stageNames[it.S]}`;
-      stage.title = `前一交易日：${it.s_prev_label}；今日：${it.s_label}`;
+      const parts = [];
+      if (sChanged) parts.push(`${stageNames[it.S_prev]}→${stageNames[it.S]}`);
+      if (lChanged) parts.push(`上限 ${it.maxL_prev}→${it.maxL}`);
+      stage.textContent = `較前日 ${direction === "up" ? "↗" : "↘"} ${parts.join("、")}`;
+      stage.title = `前一交易日：${it.s_prev_label}／上限 ${it.maxL_prev || "—"}；` +
+        `今日：${it.s_label}／上限 ${it.maxL}` +
+        (lChanged && !sChanged ? "（個股階段未變，上限隨盤勢 M 調整）" : "");
     }
     const lvl = document.createElement("span");
     lvl.className = "lvl " + it.maxL.toLowerCase();
