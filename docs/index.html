@@ -360,7 +360,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <b>鐵律</b>：只有帳面未實現獲利才加碼｜一天最多升一級｜降級立即、升級漸進｜減碼後進先出（L3→L2→L1）｜下跌不是加碼理由。
   </div>
   <div id="hold-section" style="display:none;margin-top:16px">
-    <div class="micro-label">我的持股（技術狀態每日更新）</div>
+    <div class="micro-label" id="hold-title">我的持股</div>
     <form id="hold-form" style="display:none" autocomplete="off">
       <input type="text" id="hold-input" placeholder="新增持股：輸入代號或中文名稱（如 2330 或 台積電）">
       <button type="submit">新增</button>
@@ -694,6 +694,10 @@ function renderHoldings(data) {
   if (items.length || el("hold-form").style.display !== "none") {
     el("hold-section").style.display = "";
   }
+  if (data && data.updated) {
+    el("hold-title").textContent = "我的持股（技術狀態 " + data.updated.slice(11, 16) +
+      (data.intraday ? "・盤中即時" : "・收盤定版") + "）";
+  }
   initHoldDrag();
   const list = el("hold-list");
   list.textContent = "";
@@ -819,6 +823,22 @@ function initHoldForm() {
   const form = el("hold-form");
   form.style.display = "flex";
   el("hold-section").style.display = "";
+  // 頁面載入即自動刷新技術面（伺服器端 5 分鐘內不重抓；先顯示快照、抓完重繪）
+  (async () => {
+    const msg = el("hold-msg");
+    try {
+      msg.textContent = "技術面更新中…";
+      const r = await fetch("api/holdings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh: 1 }),
+      });
+      if (r.ok) renderHoldings(await r.json());
+      msg.textContent = "";
+    } catch (e) {
+      msg.textContent = "";
+    }
+  })();
   form.addEventListener("submit", async ev => {
     ev.preventDefault();
     const input = el("hold-input"), msg = el("hold-msg");
