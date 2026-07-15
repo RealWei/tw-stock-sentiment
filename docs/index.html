@@ -205,7 +205,7 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .wl-row .names div + div { margin-top: 2px; }
 .wl-row .muted { color: var(--text-muted); }
 .wl-row .none { color: var(--warn); font-weight: 600; }
-.wl-name { cursor: pointer; }
+.wl-name { cursor: pointer; display: inline-block; }  /* 統一盒模型，讓 has-fut 底線高度一致（freq5 需 inline-block） */
 .wl-name:hover { text-decoration: underline dotted; text-underline-offset: 3px; }
 /* 有股票期貨的標的：名稱下加底線（border 不受 freq5 透明字色影響） */
 .wl-name.has-fut { border-bottom: 1.5px solid var(--baseline); padding-bottom: 1px; }
