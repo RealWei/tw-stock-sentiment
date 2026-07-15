@@ -207,6 +207,8 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .wl-row .none { color: var(--warn); font-weight: 600; }
 .wl-name { cursor: pointer; }
 .wl-name:hover { text-decoration: underline dotted; text-underline-offset: 3px; }
+/* 有股票期貨的標的：名稱下加底線（border 不受 freq5 透明字色影響） */
+.wl-name.has-fut { border-bottom: 1.5px solid var(--baseline); padding-bottom: 1px; }
 .wl-name.freq2 { color: var(--good); font-weight: 600; }
 .wl-name.freq3 { color: var(--hot); font-weight: 600; }
 .wl-name.freq5 {
@@ -978,6 +980,7 @@ function renderWatchlist(data) {
 
   // 個股頻率標色：近半年（觀察＋稍微合計）2 次＝綠、3–4 次＝紅、5 次以上＝動態 mesh 漸層
   const freq = data.counts || {};
+  const futSet = new Set(data.futures || []);
   function nameSpan(n) {
     const s = document.createElement("span");
     s.className = "wl-name";
@@ -985,6 +988,11 @@ function renderWatchlist(data) {
     if (hits.length >= 5) s.classList.add("freq5");
     else if (hits.length >= 3) s.classList.add("freq3");
     else if (hits.length === 2) s.classList.add("freq2");
+    const code = (n.match(/^\d{4,6}/) || [])[0];
+    if (code && futSet.has(code)) {
+      s.classList.add("has-fut");
+      s.title = "有股票期貨";
+    }
     s.textContent = n;
     s.addEventListener("click", ev => {
       ev.stopPropagation();
