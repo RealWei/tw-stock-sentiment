@@ -198,13 +198,21 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   display: grid;
   grid-template-columns: repeat(12, minmax(58px, 1fr));
   grid-template-rows: repeat(5, minmax(52px, auto));
+  grid-auto-flow: column;
   gap: 4px;
   min-width: 760px;
 }
-.wl-cell { position: relative; border-radius: 6px; min-height: 46px; padding: 4px 5px 5px; text-align: center; }
-/* 當日燈號圓點（右上角；白邊避免與底色互吃） */
+.wl-cell {
+  border-radius: 6px; min-height: 62px; padding: 4px 5px 5px; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* 每條當日警戒各一顆燈，固定排在格子底部 */
+.wl-lights {
+  display: flex; justify-content: center; gap: 3px;
+  min-height: 7px; margin-top: auto; padding-top: 6px;
+}
 .wl-lv {
-  position: absolute; top: 3px; right: 3px; width: 7px; height: 7px;
+  display: inline-block; flex: 0 0 auto; width: 7px; height: 7px;
   border-radius: 50%; border: 1.5px solid var(--surface-1);
 }
 .wl-lv.ok { background: var(--good); }
@@ -409,7 +417,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <span><i style="background:var(--good-wash)"></i>有觀察類股（數字＝檔數）</span>
     <span><i style="background:var(--mid)"></i>僅稍微觀察</span>
     <span><i style="background:var(--hot)"></i>掛零</span>
-    <span><i style="background:var(--good);border-radius:50%"></i><i style="background:#e8a13c;border-radius:50%"></i><i style="background:var(--hot);border-radius:50%"></i>右上圓點＝當日燈號（綠正常／黃注意／紅警戒）</span>
+    <span><i style="background:var(--good);border-radius:50%"></i><i style="background:#e8a13c;border-radius:50%"></i><i style="background:var(--hot);border-radius:50%"></i>格底圓點＝每條當日燈號（綠正常／黃注意／紅警戒）</span>
   </div>
   <div class="wl-list-title">近 60 個交易日名單</div>
   <div id="wl-list"></div>
@@ -1047,14 +1055,16 @@ function renderWatchlist(data) {
 
     const w = e.watch.length, s = e.slight.length;
     cell.classList.add(w ? "has" : (s ? "slight-only" : "zero"));
-    const LV = { ok: "🟢 正常", watch: "🟡 注意", warn: "🔴 警戒" };
-    cell.title = e.date + (e.level ? "\n當日燈號：" + LV[e.level] : "") +
+    const lightLines = e.light_lines || [];
+    cell.title = e.date + (lightLines.length ? "\n當日燈號：\n" + lightLines.join("\n") : "") +
       "\n觀察：" + (e.watch.join("、") || "—") +
       "\n稍微觀察：" + (e.slight.join("、") || "—");
-    if (e.level) {
+    const lights = document.createElement("div");
+    lights.className = "wl-lights";
+    for (const level of (e.lights || (e.level ? [e.level] : []))) {
       const lv = document.createElement("span");
-      lv.className = "wl-lv " + e.level;
-      cell.appendChild(lv);
+      lv.className = "wl-lv " + level;
+      lights.appendChild(lv);
     }
     const n = document.createElement("div");
     n.className = "n";
@@ -1066,6 +1076,7 @@ function renderWatchlist(data) {
       sub.textContent = "稍 " + s;
       cell.appendChild(sub);
     }
+    cell.appendChild(lights);
     grid.appendChild(cell);
   }
   wrap.appendChild(grid);
