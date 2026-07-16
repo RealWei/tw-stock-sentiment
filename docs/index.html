@@ -348,6 +348,10 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 }
 .tooltip .tt-date { color: var(--text-muted); margin-bottom: 2px; }
 .tooltip .tt-value { font-size: 15px; font-weight: 650; }
+.tooltip .tt-extra {
+  font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;
+  white-space: pre-line; max-width: 300px; margin-top: 4px;
+}
 /* 表格 */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11.5px; letter-spacing: 0.04em; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
@@ -419,6 +423,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <span><i style="background:var(--hot)"></i>掛零</span>
     <span><i style="background:var(--good);border-radius:50%"></i><i style="background:#e8a13c;border-radius:50%"></i><i style="background:var(--hot);border-radius:50%"></i>格底圓點＝每條當日燈號（綠正常／黃注意／紅警戒）</span>
   </div>
+  <div class="wl-list-title">燈號分數走勢（🟢 +1／🟡 −1／🔴 −2 加總；0 以上＝健康）</div>
+  <div class="chart-box" id="wl-score-chart"></div>
   <div class="wl-list-title">近 60 個交易日名單</div>
   <div id="wl-list"></div>
 </div>
@@ -1081,6 +1087,21 @@ function renderWatchlist(data) {
   }
   wrap.appendChild(grid);
 
+  // 燈號分數走勢：每日燈號加總（🟢+1/🟡−1/🔴−2），hover 顯示當日燈號明細
+  if (data.scores && data.scores.length > 1) {
+    renderLineChart(el("wl-score-chart"), data.scores.map(s => [s[0], s[1]]), {
+      color: "var(--accent)",
+      yMin: -7, yMax: 3,
+      bands: [
+        { from: 0, to: 3, fill: "var(--good-wash)" },
+        { from: -7, to: 0, fill: "var(--hot-wash)" },
+      ],
+      tickFmt: v => Math.round(v),
+      valueFmt: v => (v > 0 ? "+" : "") + v + " 分",
+      extraFmt: idx => (data.scores[idx][2] || []).join("\n"),
+    });
+  }
+
   // 個股頻率標色：近半年（觀察＋稍微合計）2 次＝綠、3–4 次＝紅、5 次以上＝動態 mesh 漸層
   const freq = data.counts || {};
   // 供持股清單以代號查觀察日期（點名稱開同一個 popover）
@@ -1258,6 +1279,12 @@ function renderLineChart(container, points, opts) {
   const tipValue = document.createElement("div");
   tipValue.className = "tt-value";
   tip.append(tipDate, tipValue);
+  let tipExtra = null;
+  if (opts.extraFmt) {
+    tipExtra = document.createElement("div");
+    tipExtra.className = "tt-extra";
+    tip.appendChild(tipExtra);
+  }
   container.appendChild(tip);
 
   const xhair = svg.querySelector("#xhair"), xdot = svg.querySelector("#xdot");
@@ -1274,6 +1301,7 @@ function renderLineChart(container, points, opts) {
     xdot.removeAttribute("visibility");
     tipDate.textContent = d;
     tipValue.textContent = opts.valueFmt(v);
+    if (tipExtra) tipExtra.textContent = opts.extraFmt(idx) || "";
     tip.style.visibility = "visible";
     const px = (cx / W) * rect.width, py = (cy / H) * rect.height;
     const flip = px > rect.width - 140;
