@@ -230,6 +230,12 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .wl-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); margin-top: 10px; flex-wrap: wrap; }
 .wl-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 .wl-list-title { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; margin: 18px 0 2px; }
+#wl-score-range { display: flex; align-items: center; gap: 6px; margin: 6px 0 8px; font-size: 12px; color: var(--text-muted); }
+#wl-score-range input {
+  font: inherit; font-size: 12px; color: var(--text-primary);
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 7px;
+  padding: 3px 8px;
+}
 .wl-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--grid); font-size: 12.5px; line-height: 1.55; }
 .wl-row:last-child { border-bottom: none; }
 .wl-row .dt { flex: 0 0 44px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
@@ -423,7 +429,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <span><i style="background:var(--hot)"></i>掛零</span>
     <span><i style="background:var(--good);border-radius:50%"></i><i style="background:#e8a13c;border-radius:50%"></i><i style="background:var(--hot);border-radius:50%"></i>格底圓點＝每條當日燈號（綠正常／黃注意／紅警戒）</span>
   </div>
-  <div class="wl-list-title">燈號分數走勢・近 60 個交易日（🟢 +1／🟡 −1／🔴 −2 加總；0 以上＝健康）</div>
+  <div class="wl-list-title">燈號分數走勢（🟢 +1／🟡 −1／🔴 −2 加總；0 以上＝健康）</div>
+  <div id="wl-score-range">
+    <input type="date" id="wl-score-from" aria-label="開始日期">
+    <span>～</span>
+    <input type="date" id="wl-score-to" aria-label="結束日期">
+  </div>
   <div class="chart-box" id="wl-score-chart"></div>
   <div class="wl-list-title">近 60 個交易日名單</div>
   <div id="wl-list"></div>
@@ -1087,20 +1098,40 @@ function renderWatchlist(data) {
   }
   wrap.appendChild(grid);
 
-  // 燈號分數走勢：每日燈號加總（🟢+1/🟡−1/🔴−2），hover 顯示當日燈號明細
+  // 燈號分數走勢：每日燈號加總（🟢+1/🟡−1/🔴−2），起訖日期自選，hover 顯示當日燈號明細
   if (data.scores && data.scores.length > 1) {
-    renderLineChart(el("wl-score-chart"), data.scores.map(s => [s[0], s[1]]), {
-      color: "var(--accent)",
-      smooth: true,
-      yMin: -7, yMax: 3,
-      bands: [
-        { from: 0, to: 3, fill: "var(--good-wash)" },
-        { from: -7, to: 0, fill: "var(--hot-wash)" },
-      ],
-      tickFmt: v => Math.round(v),
-      valueFmt: v => (v > 0 ? "+" : "") + v + " 分",
-      extraFmt: idx => (data.scores[idx][2] || []).join("\n"),
-    });
+    const first = data.scores[0][0], last = data.scores[data.scores.length - 1][0];
+    const fromEl = el("wl-score-from"), toEl = el("wl-score-to");
+    fromEl.min = toEl.min = first;
+    fromEl.max = toEl.max = last;
+    if (!fromEl.value) {
+      // 預設近半年
+      const d = new Date(last + "T00:00:00");
+      d.setDate(d.getDate() - 182);
+      const iso = d.toISOString().slice(0, 10);
+      fromEl.value = iso < first ? first : iso;
+      toEl.value = last;
+    }
+    const draw = () => {
+      const lo = fromEl.value || first, hi = toEl.value || last;
+      const rows = data.scores.filter(s => s[0] >= lo && s[0] <= hi);
+      if (rows.length < 2) return;
+      renderLineChart(el("wl-score-chart"), rows.map(s => [s[0], s[1]]), {
+        color: "var(--accent)",
+        smooth: true,
+        yMin: -7, yMax: 3,
+        bands: [
+          { from: 0, to: 3, fill: "var(--good-wash)" },
+          { from: -7, to: 0, fill: "var(--hot-wash)" },
+        ],
+        tickFmt: v => Math.round(v),
+        valueFmt: v => (v > 0 ? "+" : "") + v + " 分",
+        extraFmt: idx => (rows[idx][2] || []).join("\n"),
+      });
+    };
+    fromEl.onchange = draw;  // 用指派而非 addEventListener：重渲染時覆蓋、不殘留舊閉包
+    toEl.onchange = draw;
+    draw();
   }
 
   // 個股頻率標色：近半年（觀察＋稍微合計）2 次＝綠、3–4 次＝紅、5 次以上＝動態 mesh 漸層
