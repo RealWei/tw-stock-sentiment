@@ -211,13 +211,13 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 .wl-alert { font-size: 13px; line-height: 1.7; margin-top: 8px; color: var(--text-secondary); }
 .wl-alert .warn { color: var(--hot); font-weight: 600; }
 #wl-calendars { margin-top: 14px; overflow-x: auto; padding-bottom: 4px; }
-.wl-60-grid {
+.wl-cal-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(58px, 1fr));
-  grid-template-rows: repeat(5, minmax(52px, auto));
+  grid-template-columns: repeat(15, minmax(50px, 1fr));
+  grid-template-rows: repeat(6, minmax(50px, auto));
   grid-auto-flow: column;
   gap: 4px;
-  min-width: 760px;
+  min-width: 810px;
 }
 .wl-cell {
   border-radius: 6px; min-height: 62px; padding: 4px 5px 5px; text-align: center;
@@ -483,7 +483,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <input type="date" id="wl-score-to" aria-label="結束日期">
   </div>
   <div class="chart-box" id="wl-score-chart"></div>
-  <div class="wl-list-title">近 60 個交易日名單</div>
+  <div class="wl-list-title">近 90 個交易日名單</div>
   <div id="wl-list"></div>
 </div>
 
@@ -1098,7 +1098,7 @@ function showWlPop(anchor, name, hits) {
   pop.classList.add("open");
 }
 
-/* ---------- 觀察類股溫度計（近 60 個交易日 12×5 方格＋名單） ---------- */
+/* ---------- 觀察類股溫度計（近 90 個交易日 15×6 方格＋名單） ---------- */
 function renderWatchlist(data) {
   el("watchlist-card").style.display = "";
 
@@ -1111,12 +1111,12 @@ function renderWatchlist(data) {
     box.appendChild(div);
   }
 
-  const gridDays = data.days.slice(-60);
+  const gridDays = data.days.slice(-90);
 
   const wrap = el("wl-calendars");
   wrap.textContent = "";
   const grid = document.createElement("div");
-  grid.className = "wl-60-grid";
+  grid.className = "wl-cal-grid";
   for (const e of gridDays) {
     const cell = document.createElement("div");
     cell.className = "wl-cell";
