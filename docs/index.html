@@ -25,7 +25,8 @@
   --good-wash: rgba(33,122,70,0.12);   /* status 綠：有觀察類股 */
   --good: #1a7f4b;                     /* status 綠（文字級對比） */
   --warn: #a85d00;                     /* 提醒橘：無觀察／掛零文字 */
-  --tooltip-bg: #ffffff;
+  --tooltip-bg: rgba(255,255,255,0.78);
+  --chrome: rgba(246,248,251,0.72);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -47,28 +48,44 @@
     --good-wash: rgba(62,207,119,0.16);
     --good: #45b877;
     --warn: #f0a64a;
-    --tooltip-bg: #1c2130;
+    --tooltip-bg: rgba(28,33,48,0.78);
+    --chrome: rgba(11,13,18,0.72);
   }
 }
 * { box-sizing: border-box; margin: 0; }
 body {
-  font-family: "Inter", -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, "SF Pro Text", system-ui, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-optical-sizing: auto;
   background: var(--page);
   color: var(--text-primary);
-  padding: 24px 20px 56px;
+  padding: 0 20px 56px;
   max-width: 1080px;
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 400ms ease, color 400ms ease; /* 明暗切換緩變，避免亮度突跳 */
 }
-header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
+/* 懸浮半透明頂欄：內容從下方捲過（材質層），捲動後才出現邊緣分隔 */
+header {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  margin: 0 -20px 20px; padding: 16px 20px 12px;
+  background: var(--chrome);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  transition: box-shadow 240ms ease;
+}
+header.scrolled { box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.06); }
+h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 #as-of { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 18px 20px;
   box-shadow: var(--shadow);
+}
+@media (prefers-color-scheme: dark) {
+  .card { border-top-color: rgba(240,242,247,0.13); }  /* 材質頂緣受光 */
 }
 .micro-label {
   font-size: 12px; font-weight: 600; color: var(--text-muted);
@@ -273,9 +290,27 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 }
 #wl-pop {
   position: absolute; z-index: 20; visibility: hidden;
-  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 10px;
+  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 12px;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
   box-shadow: 0 6px 24px rgba(0,0,0,0.18); padding: 12px 16px;
   min-width: 200px; max-width: 280px;  /* 彈性高度：不設上限、不出捲軸 */
+  /* 材質化進出場：從觸發點長出（transform-origin 由 JS 依翻轉方向設定）、原路收回 */
+  opacity: 0; transform: scale(0.94); filter: blur(3px);
+  transition: opacity 200ms cubic-bezier(.2,.9,.3,1), transform 200ms cubic-bezier(.2,.9,.3,1),
+              filter 200ms cubic-bezier(.2,.9,.3,1), visibility 0s linear 200ms;
+}
+#wl-pop.open {
+  visibility: visible; opacity: 1; transform: scale(1); filter: blur(0);
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  #wl-pop { transform: none; filter: none; transition: opacity 150ms ease, visibility 0s linear 150ms; }
+  #wl-pop.open { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  #wl-pop { background: var(--surface-1); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  header { background: var(--page); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 #wl-pop .wp-name { font-size: 14px; font-weight: 650; }
 #wl-pop .wp-count { font-size: 12px; color: var(--text-muted); margin: 2px 0 8px; }
@@ -292,7 +327,7 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 #hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
 #gauge-wrap { flex: 0 0 auto; }
 #hero-text { flex: 1 1 240px; min-width: 220px; }
-#hero-score { font-size: 56px; font-weight: 650; line-height: 1.05; }
+#hero-score { font-size: 56px; font-weight: 650; line-height: 1.05; letter-spacing: -0.025em; }
 #hero-zone { font-size: 16px; font-weight: 600; margin-top: 4px; }
 #hero-advice { color: var(--text-secondary); font-size: 14px; margin-top: 8px; }
 .zone-overheat { color: var(--hot); }
@@ -340,6 +375,13 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   box-shadow: var(--shadow); transition: color .12s, border-color .12s;
 }
 #range-row button:hover { color: var(--text-primary); }
+/* 回饋在按下瞬間，不等 release（Apple §1）；transform 走 compositor */
+#range-row button, #wl-form button, #hold-form button, .hold-del {
+  transition: transform 120ms ease-out;
+}
+#range-row button:active, #wl-form button:active, #hold-form button:active, .hold-del:active {
+  transform: scale(0.96);
+}
 #range-row button[aria-pressed="true"] { color: var(--accent); font-weight: 650; border-color: var(--accent); }
 .chart-card { margin-bottom: 16px; }
 .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -348,9 +390,14 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .chart-box svg { display: block; width: 100%; height: auto; }
 .tooltip {
   position: absolute; pointer-events: none; visibility: hidden;
-  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 8px;
+  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 10px;
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   padding: 8px 10px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   white-space: nowrap; z-index: 5;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tooltip { background: var(--surface-1); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 .tooltip .tt-date { color: var(--text-muted); margin-bottom: 2px; }
 .tooltip .tt-value { font-size: 15px; font-weight: 650; }
@@ -982,9 +1029,9 @@ function getWlPop() {
     pop = document.createElement("div");
     pop.id = "wl-pop";
     document.body.appendChild(pop);
-    document.addEventListener("click", () => { pop.style.visibility = "hidden"; });
+    document.addEventListener("click", () => pop.classList.remove("open"));
     document.addEventListener("keydown", ev => {
-      if (ev.key === "Escape") pop.style.visibility = "hidden";
+      if (ev.key === "Escape") pop.classList.remove("open");
     });
     pop.addEventListener("click", ev => ev.stopPropagation());
   }
@@ -993,8 +1040,8 @@ function getWlPop() {
 
 function showWlPop(anchor, name, hits) {
   const pop = getWlPop();
-  if (pop.dataset.for === name && pop.style.visibility === "visible") {
-    pop.style.visibility = "hidden";
+  if (pop.dataset.for === name && pop.classList.contains("open")) {
+    pop.classList.remove("open");  // 原路收回（同一過渡反向播放）
     return;
   }
   pop.dataset.for = name;
@@ -1024,9 +1071,10 @@ function showWlPop(anchor, name, hits) {
     row.textContent = "（近半年未列入觀察名單）";
     pop.appendChild(row);
   }
-  // 先顯示取得尺寸再定位（錨點下方，靠右超界則左移、靠底超界則翻上）
-  pop.style.visibility = "visible";
-  const a = anchor.getBoundingClientRect(), p = pop.getBoundingClientRect();
+  // 量尺寸再定位（錨點下方，靠右超界則左移、靠底超界則翻上）
+  pop.classList.remove("open");
+  const a = anchor.getBoundingClientRect();
+  const p = { width: pop.offsetWidth, height: pop.offsetHeight };  // offset* 不受 scale 影響
   const vw = window.innerWidth || document.documentElement.clientWidth;
   const vh = window.innerHeight || document.documentElement.clientHeight;
   let left = a.left + window.scrollX;
@@ -1035,12 +1083,19 @@ function showWlPop(anchor, name, hits) {
   }
   left = Math.max(left, window.scrollX + 8);
   let top = a.bottom + window.scrollY + 6;
+  let flippedUp = false;
   if (a.bottom + p.height + 12 > vh) {
     top = a.top + window.scrollY - p.height - 6;
-    if (top < window.scrollY) top = a.bottom + window.scrollY + 6;
+    flippedUp = true;
+    if (top < window.scrollY) { top = a.bottom + window.scrollY + 6; flippedUp = false; }
   }
   pop.style.left = left + "px";
   pop.style.top = top + "px";
+  // 空間錨定：從觸發點長出（下方展開＝origin 在頂、翻上＝origin 在底），收回走同一條路
+  const originX = Math.max(8, Math.min(a.left + window.scrollX + a.width / 2 - left, p.width - 8));
+  pop.style.transformOrigin = `${originX}px ${flippedUp ? "100%" : "0%"}`;
+  void pop.offsetWidth;  // 強制 style flush，讓過渡從基準態起跑
+  pop.classList.add("open");
 }
 
 /* ---------- 觀察類股溫度計（近 60 個交易日 12×5 方格＋名單） ---------- */
@@ -1559,6 +1614,12 @@ async function init() {
 }
 
 init();
+
+// 捲動邊緣效果：內容捲到頂欄下方時才出現分隔（無捲動＝無邊界）
+const _hdr = document.querySelector("header");
+addEventListener("scroll", () => {
+  _hdr.classList.toggle("scrolled", scrollY > 4);
+}, { passive: true });
 </script>
 </body>
 </html>
