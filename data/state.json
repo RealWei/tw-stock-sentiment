@@ -1,9 +1,10 @@
 {
   "zone": "neutral",
-  "consecutive_failures": 0,
+  "consecutive_failures": 1,
   "notified_signals": [
     "2026-07-02|taiex|doji|bearish",
     "2026-06-22|tpex|pv_divergence|bearish",
-    "2026-06-22|tpex|rsi_divergence|bearish"
+    "2026-06-22|tpex|rsi_divergence|bearish",
+    "2026-07-20|taiex|pv_divergence|bullish"
   ]
 }
