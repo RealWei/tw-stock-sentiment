@@ -48,7 +48,9 @@ def fetch_all(today_yyyymmdd):
 
     breadth = attempt("breadth_ratio", lambda: fetchers.fetch_breadth(today_yyyymmdd))
     if breadth:
-        date, up, down = breadth
+        date, up, down, limit_down = breadth
+        if limit_down is not None:
+            updates["taiex_limit_down"] = [(date, float(limit_down))]
         if up + down:
             updates["breadth_ratio"] = [(date, up / (up + down))]
 
@@ -116,7 +118,8 @@ def build_signal_report(raw):
                 if d in opens and d in highs and d in lows
             }
             volumes = dict(raw.get(f"{mkt}_volume", []))
-            events = scan_market(dates, closes, volumes, ohlc)
+            limit_down = dict(raw.get("taiex_limit_down", [])) if mkt == "taiex" else None
+            events = scan_market(dates, closes, volumes, ohlc, limit_down=limit_down)
             events.sort(key=lambda e: e["date"], reverse=True)
             entry["events"] = events
             entry["levels"] = support_resistance(closes)

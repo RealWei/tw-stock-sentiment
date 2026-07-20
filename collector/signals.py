@@ -143,12 +143,20 @@ SIGNALS = {
 }
 
 
-def scan_market(dates, closes, volumes, ohlc, lookback=30):
+LIMIT_DOWN_HIGH = 50    # 跌停家數絕對高位（約 5% 上市股票）
+
+
+def scan_market(dates, closes, volumes, ohlc, lookback=30, limit_down=None):
     """掃描最後 lookback 個交易日的訊號。
 
     dates/closes 等長由舊到新；volumes、ohlc 為 date → 值的 dict（可缺）。
     缺 OHLC 的日期以收盤價代 K 棒（歷史高低點退化為收盤高低點），
     但 K 棒形態（上影線/吞噬/十字星）只在當日有真實 OHLC 時評估。
+
+    limit_down：date → 當日跌停家數（股票，不含權證/ETF）。偏多價量背離
+    的量縮有兩種相反成因——賣壓衰竭 vs 跌停鎖死賣不掉；當日跌停家數
+    仍在增加或處於絕對高位時，量縮判定為鎖死型，壓掉偏多訊號。
+    無資料的日期不過濾（序列自 2026-07 起累積）。
     """
     events = []
     vol_list = [volumes.get(d) for d in dates]
@@ -166,6 +174,14 @@ def scan_market(dates, closes, volumes, ohlc, lookback=30):
         window_vols = vol_list[i - PV_WINDOW + 1 : i + 1]
         if len(window_vols) == PV_WINDOW and all(v is not None for v in window_vols):
             direction = price_volume_divergence(prefix_c, window_vols)
+            if direction == "bullish" and limit_down:
+                ld = limit_down.get(date)
+                ld_prev = limit_down.get(dates[i - 1]) if i else None
+                locked = ld is not None and (
+                    ld >= LIMIT_DOWN_HIGH or (ld_prev is not None and ld > ld_prev)
+                )
+                if locked:
+                    direction = None  # 鎖死型量縮：跌停未收斂，非賣壓衰竭
             if direction:
                 events.append({"date": date, "id": "pv_divergence", "direction": direction})
 

@@ -23,10 +23,11 @@ def test_parse_margin_balance_returns_today_balance_in_thousands():
 
 
 def test_parse_breadth_uses_stock_column():
-    date, up, down = parse_breadth(load("mi_index_ms.json"))
+    date, up, down, limit_down = parse_breadth(load("mi_index_ms.json"))
     assert date == "2026-07-07"
     assert up == 128
     assert down == 892
+    assert limit_down == 26  # 股票欄括號值，非整體市場的 720
 
 
 def test_parse_taiex_closes_converts_roc_dates():

@@ -53,21 +53,27 @@ def fetch_margin_balance(date_yyyymmdd):
 # ---- 漲跌家數（TWSE 大盤統計資訊，取「股票」欄） ----
 
 def parse_breadth(payload):
-    """回傳 (date, 上漲家數, 下跌家數)，只計股票不含 ETF/權證。"""
+    """回傳 (date, 上漲家數, 下跌家數, 跌停家數)，只計股票不含 ETF/權證。
+
+    跌停家數取「下跌(跌停)」股票欄括號內的值，供價量背離的
+    鎖死型量縮過濾（跌停鎖死＝賣不掉造成的量縮，不是賣壓衰竭）。
+    """
     date = payload["date"]
     iso = f"{date[:4]}-{date[4:6]}-{date[6:]}"
-    up = down = None
+    up = down = limit_down = None
     for table in payload["tables"]:
         if table.get("title") == "漲跌證券數合計":
             for row in table["data"]:
-                count = int(_num(row[2].split("(")[0]))
+                cell = row[2]
+                count = int(_num(cell.split("(")[0]))
                 if row[0].startswith("上漲"):
                     up = count
                 elif row[0].startswith("下跌"):
                     down = count
+                    limit_down = int(_num(cell.split("(")[1].rstrip(")"))) if "(" in cell else 0
     if up is None or down is None:
         raise ValueError("漲跌證券數合計 table not found")
-    return iso, up, down
+    return iso, up, down, limit_down
 
 
 def fetch_breadth(date_yyyymmdd):
