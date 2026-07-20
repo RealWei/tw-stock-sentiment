@@ -3596,6 +3596,7 @@ date,indicator,value
 2026-07-15,taiex_high,45881.91
 2026-07-16,taiex_high,45855.02
 2026-07-17,taiex_high,45234.08
+2026-07-20,taiex_high,43084.51
 2026-07-02,taiex_limit_down,1.0
 2026-07-03,taiex_limit_down,3.0
 2026-07-06,taiex_limit_down,5.0
@@ -4305,6 +4306,7 @@ date,indicator,value
 2026-07-15,taiex_low,44850.69
 2026-07-16,taiex_low,44970.64
 2026-07-17,taiex_low,42671.27
+2026-07-20,taiex_low,41967.75
 2017-12-01,taiex_open,10591.62
 2017-12-04,taiex_open,10617.27
 2017-12-05,taiex_open,10607.62
@@ -5002,6 +5004,7 @@ date,indicator,value
 2026-07-15,taiex_open,44850.69
 2026-07-16,taiex_open,45511.98
 2026-07-17,taiex_open,45234.08
+2026-07-20,taiex_open,42793.15
 2023-07-03,taiex_volume,343298643858.0
 2023-07-04,taiex_volume,382879549186.0
 2023-07-05,taiex_volume,342355262696.0
