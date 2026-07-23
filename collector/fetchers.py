@@ -302,3 +302,26 @@ def fetch_money_supply():
     if len(m2) < 100:
         raise ValueError(f"貨幣總計數解析異常（僅 {len(m2)} 筆）")
     return {"m1b_yoy": m1b, "m2_yoy": m2}
+
+
+# ---- 美國 M2 年增率（FRED M2SL，免 key CSV，月資料、季調） ----
+US_M2_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=M2SL"
+
+
+def fetch_us_m2():
+    """回傳 [("YYYY-MM-01", 年增率%), ...]（由水準值自算 12 個月變動）。"""
+    resp = requests.get(US_M2_URL, timeout=TIMEOUT)
+    resp.raise_for_status()
+    import csv as _csv
+    import io as _io
+    rows = [r for r in _csv.reader(_io.StringIO(resp.text))][1:]
+    levels = [(r[0], float(r[1])) for r in rows if len(r) >= 2 and r[1] not in ("", ".")]
+    out = []
+    for i in range(12, len(levels)):
+        d, v = levels[i]
+        _, v12 = levels[i - 12]
+        if v12:
+            out.append((d, round((v / v12 - 1) * 100, 2)))
+    if len(out) < 100:
+        raise ValueError(f"美國 M2 解析異常（僅 {len(out)} 筆）")
+    return out

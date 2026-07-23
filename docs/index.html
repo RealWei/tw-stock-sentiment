@@ -546,6 +546,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   <div class="chart-head"><span class="chart-title">資金面：M1B−M2 年增率差（黃金／死亡交叉，近 10 年）</span></div>
   <div id="money-status" style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;font-variant-numeric:tabular-nums"></div>
   <div class="chart-box" id="money-chart"></div>
+  <div class="chart-head" style="margin-top:16px"><span class="chart-title" style="font-size:13px">美國 M2 年增率（FRED，全球流動性潮汐）</span></div>
+  <div class="chart-box" id="us-m2-chart"></div>
 </div>
 
 <div class="section-title">指標明細</div>
@@ -1608,6 +1610,19 @@ async function init() {
       `${ym(lastD)}（公布落後約 2 個月）：M1B 年增率 +${m1b[lastD]}%｜M2 +${m2[lastD]}%｜` +
       `差 ${spread[spread.length - 1][1] > 0 ? "+" : ""}${spread[spread.length - 1][1]}pp・` +
       (lastSign ? `黃金交叉（自 ${ym(crossStart)}，資金活化）` : `死亡交叉（自 ${ym(crossStart)}，資金定存化）`);
+    // 美國 M2 年增率（第二張圖＋狀態行附讀數）
+    if (mo.us_m2 && mo.us_m2.length > 24) {
+      const us = mo.us_m2;
+      const usLast = us[us.length - 1];
+      el("money-status").textContent += `｜美國 M2 ${usLast[1] >= 0 ? "+" : ""}${usLast[1]}%（${ym(usLast[0])}）`;
+      renderLineChart(el("us-m2-chart"), us.slice(-120), {
+        color: "var(--accent)",
+        bands: [{ from: -6, to: 0, fill: "var(--hot-wash)" }],
+        yMin: -6, yMax: 28,
+        tickFmt: v => Math.round(v) + "%",
+        valueFmt: v => (v > 0 ? "+" : "") + v.toFixed(2) + "%",
+      });
+    }
     renderLineChart(el("money-chart"), spread.slice(-120), {
       color: "var(--accent)",
       bands: [

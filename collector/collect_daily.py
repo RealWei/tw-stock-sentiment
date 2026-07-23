@@ -50,6 +50,10 @@ def fetch_all(today_yyyymmdd):
     if money:
         updates.update(money)  # m1b_yoy / m2_yoy 全序列（冪等 upsert，月資料）
 
+    us_m2 = attempt("us_m2", fetchers.fetch_us_m2)
+    if us_m2:
+        updates["us_m2_yoy"] = us_m2
+
     breadth = attempt("breadth_ratio", lambda: fetchers.fetch_breadth(today_yyyymmdd))
     if breadth:
         date, up, down, limit_down = breadth
@@ -207,7 +211,7 @@ def write_money(raw):
     if not m1b or not m2:
         return
     (DOCS_DATA / "money.json").write_text(json.dumps(
-        {"m1b": m1b, "m2": m2}, ensure_ascii=False))
+        {"m1b": m1b, "m2": m2, "us_m2": raw.get("us_m2_yoy", [])}, ensure_ascii=False))
 
 
 def main():
