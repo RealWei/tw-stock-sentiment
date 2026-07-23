@@ -1157,15 +1157,19 @@ function renderWatchlist(data) {
   if (data.scores && data.scores.length > 1) {
     const first = data.scores[0][0], last = data.scores[data.scores.length - 1][0];
     const fromEl = el("wl-score-from"), toEl = el("wl-score-to");
+    const now = new Date();
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const maxIso = todayIso > last ? todayIso : last;  // 允許選到今天，即使資料尚未更新到今天
     fromEl.min = toEl.min = first;
-    fromEl.max = toEl.max = last;
+    fromEl.max = toEl.max = maxIso;
+    // 結束日期每次重新整理都重設為今天（不沿用瀏覽器還原的舊值）
+    toEl.value = todayIso;
     if (!fromEl.value) {
-      // 預設近半年
-      const d = new Date(last + "T00:00:00");
+      // 開始日期預設近半年（僅首次設定；之後保留使用者選擇）
+      const d = new Date(todayIso + "T00:00:00");
       d.setDate(d.getDate() - 182);
       const iso = d.toISOString().slice(0, 10);
       fromEl.value = iso < first ? first : iso;
-      toEl.value = last;
     }
     const draw = () => {
       const lo = fromEl.value || first, hi = toEl.value || last;
