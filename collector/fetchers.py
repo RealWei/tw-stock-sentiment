@@ -252,3 +252,53 @@ def fetch_foreign_futures_net_oi():
         f"{TAIFEX_API}/MarketDataOfMajorInstitutionalTradersDetailsOfFuturesContractsBytheDate"
     )
     return parse_foreign_futures_net_oi(payload)
+
+
+# ---- 貨幣總計數 M1B/M2 年增率（央行 OpenData，月資料，1987 起） ----
+MONEY_CSV_URL = (
+    "https://www.cbc.gov.tw/public/data/OpenData/"
+    "\u7d93\u7814\u8655/EF15M01.csv"  # 經研處/EF15M01.csv（日平均、月資料）
+)
+
+
+def fetch_money_supply():
+    """回傳 {"m1b_yoy": [(date, v)], "m2_yoy": [...]}；date 用該月 1 日。
+
+    央行每月下旬公布上月值（約落後 1.5-2 個月）。欄位以表頭名稱定位，
+    值為 "-"（早期無年增率）的列跳過。
+    """
+    # 央行網站憑證缺 SKI 擴展，requests 驗證會失敗（同 TPEX 老問題）：
+    # 重試 3 次後最後一次略過驗證
+    resp = None
+    for i in range(4):
+        try:
+            verify = i < 3
+            if not verify:
+                import urllib3
+                urllib3.disable_warnings()
+            resp = requests.get(MONEY_CSV_URL, timeout=TIMEOUT, verify=verify)
+            break
+        except requests.exceptions.SSLError:
+            if i == 3:
+                raise
+    resp.raise_for_status()
+    resp.encoding = "utf-8-sig"
+    import csv as _csv
+    import io as _io
+    rows = list(_csv.reader(_io.StringIO(resp.text)))
+    header = rows[0]
+    i_m1b = next(i for i, h in enumerate(header) if "Ｍ１Ｂ" in h and "年增率" in h)
+    i_m2 = next(i for i, h in enumerate(header) if "Ｍ２" in h and "年增率" in h)
+    m1b, m2 = [], []
+    for r in rows[1:]:
+        if not r or "M" not in r[0]:
+            continue
+        y, m = r[0].split("M")
+        iso = f"{y}-{m}-01"
+        for idx, out in ((i_m1b, m1b), (i_m2, m2)):
+            v = r[idx].strip()
+            if v and v != "-":
+                out.append((iso, round(float(v), 2)))
+    if len(m2) < 100:
+        raise ValueError(f"貨幣總計數解析異常（僅 {len(m2)} 筆）")
+    return {"m1b_yoy": m1b, "m2_yoy": m2}

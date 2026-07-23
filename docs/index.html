@@ -542,6 +542,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   <div class="chart-box" id="indicator-chart"></div>
 </div>
 
+<div class="card chart-card" id="money-card" style="display:none">
+  <div class="chart-head"><span class="chart-title">資金面：M1B−M2 年增率差（黃金／死亡交叉，近 10 年）</span></div>
+  <div id="money-status" style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;font-variant-numeric:tabular-nums"></div>
+  <div class="chart-box" id="money-chart"></div>
+</div>
+
 <div class="section-title">指標明細</div>
 <div class="card" style="overflow-x:auto">
   <table id="detail-table">
@@ -1579,6 +1585,43 @@ async function init() {
         valueFmt: v => "水位 " + v + "%",
       });
     }
+  });
+
+  // 資金面 M1B/M2（月資料，官方公布約落後 2 個月；不存在則隱藏）
+  fetch("data/money.json").then(r => r.ok ? r.json() : null).catch(() => null).then(mo => {
+    if (!mo || !mo.m1b || !mo.m2) return;
+    const m1b = Object.fromEntries(mo.m1b), m2 = Object.fromEntries(mo.m2);
+    const months = mo.m1b.map(x => x[0]).filter(d => d in m2);
+    const spread = months.map(d => [d, +(m1b[d] - m2[d]).toFixed(2)]);
+    if (spread.length < 24) return;
+    el("money-card").style.display = "";
+    // 目前狀態與交叉起點
+    const lastD = months[months.length - 1];
+    let crossStart = null;
+    const lastSign = spread[spread.length - 1][1] > 0;
+    for (let i = spread.length - 1; i >= 0; i--) {
+      if ((spread[i][1] > 0) !== lastSign) break;
+      crossStart = spread[i][0];
+    }
+    const ym = d => d.slice(0, 7).replace("-", "/");
+    el("money-status").textContent =
+      `${ym(lastD)}（公布落後約 2 個月）：M1B 年增率 +${m1b[lastD]}%｜M2 +${m2[lastD]}%｜` +
+      `差 ${spread[spread.length - 1][1] > 0 ? "+" : ""}${spread[spread.length - 1][1]}pp・` +
+      (lastSign ? `黃金交叉（自 ${ym(crossStart)}，資金活化）` : `死亡交叉（自 ${ym(crossStart)}，資金定存化）`);
+    renderLineChart(el("money-chart"), spread.slice(-120), {
+      color: "var(--accent)",
+      bands: [
+        { from: 0, to: 12, fill: "var(--good-wash)" },
+        { from: -12, to: 0, fill: "var(--hot-wash)" },
+      ],
+      yMin: -12, yMax: 12,
+      tickFmt: v => Math.round(v),
+      valueFmt: v => (v > 0 ? "+" : "") + v.toFixed(2) + " pp",
+      extraFmt: idx => {
+        const d = spread.slice(-120)[idx][0];
+        return `M1B ${m1b[d] >= 0 ? "+" : ""}${m1b[d]}%｜M2 ${m2[d] >= 0 ? "+" : ""}${m2[d]}%`;
+      },
+    });
   });
 
   // 加減碼導航（chipwatch market_mode.py 產生；不存在則隱藏區塊）

@@ -46,6 +46,10 @@ def fetch_all(today_yyyymmdd):
     if margin:
         updates["margin_balance"] = [margin]
 
+    money = attempt("money_supply", fetchers.fetch_money_supply)
+    if money:
+        updates.update(money)  # m1b_yoy / m2_yoy 全序列（冪等 upsert，月資料）
+
     breadth = attempt("breadth_ratio", lambda: fetchers.fetch_breadth(today_yyyymmdd))
     if breadth:
         date, up, down, limit_down = breadth
@@ -197,6 +201,15 @@ def write_outputs(snapshot, derived):
     (DOCS_DATA / "series.json").write_text(json.dumps(series, ensure_ascii=False))
 
 
+def write_money(raw):
+    """資金面 M1B/M2 年增率 → docs/data/money.json（黃金/死亡交叉圖卡用）。"""
+    m1b, m2 = raw.get("m1b_yoy", []), raw.get("m2_yoy", [])
+    if not m1b or not m2:
+        return
+    (DOCS_DATA / "money.json").write_text(json.dumps(
+        {"m1b": m1b, "m2": m2}, ensure_ascii=False))
+
+
 def main():
     now = datetime.now(TAIPEI)
     today = now.strftime("%Y%m%d")
@@ -223,6 +236,7 @@ def main():
     if meter_zone is not None:  # 雙計優先，資料不足時退回總分燈號
         snapshot["zone"] = meter_zone
     write_outputs(snapshot, derived)
+    write_money(raw)
     if greed is not None and fear is not None:
         print(f"過熱計 {greed:.0f} / 恐慌計 {fear:.0f}")
 
