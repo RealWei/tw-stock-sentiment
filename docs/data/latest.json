@@ -1,17 +1,17 @@
 {
- "date": "2026-08-01",
- "composite": 31.261876870204716,
- "greed": 45.99748036240039,
- "fear": 23.514707608166667,
+ "date": "2026-08-03",
+ "composite": 24.988399140890177,
+ "greed": 45.85790960451977,
+ "fear": 24.356243851575222,
  "zone": "neutral",
  "indicators": [
   {
    "id": "pe",
    "name": "個股本益比中位數",
    "invert": false,
-   "value": 19.4,
-   "score": 31.65137614678899,
-   "updated": "2026-07-31"
+   "value": 19.46,
+   "score": 35.0,
+   "updated": "2026-08-03"
   },
   {
    "id": "margin_roc20",
@@ -25,33 +25,33 @@
    "id": "foreign_net_oi",
    "name": "外資台指期淨部位",
    "invert": false,
-   "value": -81017.0,
-   "score": 2.7,
-   "updated": "2026-07-30"
+   "value": -82515.0,
+   "score": 1.6966067864271457,
+   "updated": "2026-07-31"
   },
   {
    "id": "pc_oi_ratio",
    "name": "Put/Call未平倉比",
    "invert": true,
-   "value": 79.43,
-   "score": 90.7,
-   "updated": "2026-07-30"
+   "value": 107.27,
+   "score": 52.19560878243513,
+   "updated": "2026-07-31"
   },
   {
    "id": "vol20",
    "name": "大盤20日波動率",
    "invert": true,
-   "value": 48.439287355982266,
+   "value": 48.547889653695805,
    "score": 2.6822558459422225,
-   "updated": "2026-07-31"
+   "updated": "2026-08-03"
   },
   {
    "id": "breadth_ma20",
    "name": "漲跌家數比(20日)",
    "invert": false,
-   "value": 0.44103755399854994,
-   "score": 15.663900414937759,
-   "updated": "2026-07-31"
+   "value": 0.4399881096773159,
+   "score": 14.182194616977226,
+   "updated": "2026-08-03"
   }
  ]
 }
