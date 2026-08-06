@@ -503,6 +503,7 @@ date,indicator,value
 2026-08-03,breadth_ratio,0.6467065868263473
 2026-08-04,breadth_ratio,0.6014056224899599
 2026-08-05,breadth_ratio,0.7007150153217568
+2026-08-06,breadth_ratio,0.5475206611570248
 2024-07-10,dividend_yield,2.36
 2024-07-17,dividend_yield,2.335
 2024-07-31,dividend_yield,2.45
@@ -1101,6 +1102,7 @@ date,indicator,value
 2026-07-31,foreign_net_oi,-82515.0
 2026-08-03,foreign_net_oi,-90038.0
 2026-08-04,foreign_net_oi,-87858.0
+2026-08-05,foreign_net_oi,-87199.0
 1988-05-01,m1b_yoy,31.39
 1988-06-01,m1b_yoy,32.17
 1988-07-01,m1b_yoy,30.67
@@ -3012,6 +3014,7 @@ date,indicator,value
 2026-07-31,pc_oi_ratio,107.27
 2026-08-03,pc_oi_ratio,97.66
 2026-08-04,pc_oi_ratio,102.56
+2026-08-05,pc_oi_ratio,111.87
 2024-07-10,pe,22.305
 2024-07-17,pe,22.55
 2024-07-31,pe,21.21
@@ -3124,6 +3127,7 @@ date,indicator,value
 2026-08-03,pe,19.46
 2026-08-04,pe,19.6
 2026-08-05,pe,19.545
+2026-08-06,pe,19.34
 2023-07-03,taiex_close,17084.2
 2023-07-04,taiex_close,17140.77
 2023-07-05,taiex_close,17056.43
@@ -3876,6 +3880,7 @@ date,indicator,value
 2026-08-03,taiex_close,43386.41
 2026-08-04,taiex_close,43360.66
 2026-08-05,taiex_close,44611.6
+2026-08-06,taiex_close,44396.7
 2017-12-01,taiex_high,10665.92
 2017-12-04,taiex_high,10665.43
 2017-12-05,taiex_high,10635.71
@@ -4586,6 +4591,7 @@ date,indicator,value
 2026-08-03,taiex_high,43784.19
 2026-08-04,taiex_high,43912.77
 2026-08-05,taiex_high,44980.31
+2026-08-06,taiex_high,44601.24
 2026-07-02,taiex_limit_down,1.0
 2026-07-03,taiex_limit_down,3.0
 2026-07-06,taiex_limit_down,5.0
@@ -4610,6 +4616,7 @@ date,indicator,value
 2026-08-03,taiex_limit_down,0.0
 2026-08-04,taiex_limit_down,0.0
 2026-08-05,taiex_limit_down,1.0
+2026-08-06,taiex_limit_down,2.0
 2017-12-01,taiex_low,10495.15
 2017-12-04,taiex_low,10565.68
 2017-12-05,taiex_low,10540.74
@@ -5320,6 +5327,7 @@ date,indicator,value
 2026-08-03,taiex_low,42780.42
 2026-08-04,taiex_low,42895.81
 2026-08-05,taiex_low,43809.83
+2026-08-06,taiex_low,44024.32
 2017-12-01,taiex_open,10591.62
 2017-12-04,taiex_open,10617.27
 2017-12-05,taiex_open,10607.62
@@ -6030,6 +6038,7 @@ date,indicator,value
 2026-08-03,taiex_open,42780.42
 2026-08-04,taiex_open,43092.49
 2026-08-05,taiex_open,43809.83
+2026-08-06,taiex_open,44487.94
 2023-07-03,taiex_volume,343298643858.0
 2023-07-04,taiex_volume,382879549186.0
 2023-07-05,taiex_volume,342355262696.0
@@ -6739,6 +6748,7 @@ date,indicator,value
 2026-08-03,taiex_volume,885506043091.0
 2026-08-04,taiex_volume,1087045875836.0
 2026-08-05,taiex_volume,1200212510521.0
+2026-08-06,taiex_volume,974054973424.0
 2024-07-08,tpex_close,278.77
 2024-07-09,tpex_close,278.06
 2024-07-10,tpex_close,279.95
@@ -7241,6 +7251,7 @@ date,indicator,value
 2026-08-03,tpex_close,362.89
 2026-08-04,tpex_close,375.03
 2026-08-05,tpex_close,383.75
+2026-08-06,tpex_close,391.37
 2026-07-01,tpex_high,437.56
 2026-07-02,tpex_high,439.51
 2026-07-03,tpex_high,445.97
@@ -7266,6 +7277,7 @@ date,indicator,value
 2026-08-03,tpex_high,365.82
 2026-08-04,tpex_high,376.61
 2026-08-05,tpex_high,390.96
+2026-08-06,tpex_high,391.96
 2026-07-01,tpex_low,430.29
 2026-07-02,tpex_low,424.2
 2026-07-03,tpex_low,435.92
@@ -7291,6 +7303,7 @@ date,indicator,value
 2026-08-03,tpex_low,349.14
 2026-08-04,tpex_low,364.8
 2026-08-05,tpex_low,378.69
+2026-08-06,tpex_low,378.5
 2026-07-01,tpex_open,430.29
 2026-07-02,tpex_open,429.41
 2026-07-03,tpex_open,438.16
@@ -7316,6 +7329,7 @@ date,indicator,value
 2026-08-03,tpex_open,349.29
 2026-08-04,tpex_open,364.8
 2026-08-05,tpex_open,378.69
+2026-08-06,tpex_open,383.72
 2024-07-08,tpex_volume,142876.0
 2024-07-09,tpex_volume,137211.0
 2024-07-10,tpex_volume,115395.0
@@ -7817,6 +7831,7 @@ date,indicator,value
 2026-08-03,tpex_volume,132456.0
 2026-08-04,tpex_volume,159829.0
 2026-08-05,tpex_volume,184417.0
+2026-08-06,tpex_volume,225396.0
 1960-01-01,us_m2_yoy,4.05
 1960-02-01,us_m2_yoy,3.72
 1960-03-01,us_m2_yoy,3.49
