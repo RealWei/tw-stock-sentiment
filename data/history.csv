@@ -2539,6 +2539,7 @@ date,indicator,value
 2026-08-17,margin_balance,550101672.0
 2026-08-18,margin_balance,547011379.0
 2026-08-19,margin_balance,548190238.0
+2026-08-20,margin_balance,548407625.0
 2024-07-08,pc_oi_ratio,122.12
 2024-07-09,pc_oi_ratio,109.03
 2024-07-10,pc_oi_ratio,108.18
@@ -3175,6 +3176,7 @@ date,indicator,value
 2026-08-17,pe,17.735
 2026-08-18,pe,17.56
 2026-08-19,pe,17.56
+2026-08-20,pe,17.58
 2023-07-03,taiex_close,17084.2
 2023-07-04,taiex_close,17140.77
 2023-07-05,taiex_close,17056.43
@@ -6855,7 +6857,7 @@ date,indicator,value
 2026-08-17,taiex_volume,981055134845.0
 2026-08-18,taiex_volume,1007881760816.0
 2026-08-19,taiex_volume,890269743542.0
-2026-08-20,taiex_volume,821151035969.0
+2026-08-20,taiex_volume,834412514041.0
 2024-07-08,tpex_close,278.77
 2024-07-09,tpex_close,278.06
 2024-07-10,tpex_close,279.95
