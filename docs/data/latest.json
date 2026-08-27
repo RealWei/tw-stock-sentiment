@@ -1,8 +1,8 @@
 {
  "date": "2026-08-28",
- "composite": 31.494624677023243,
+ "composite": 30.672893313614964,
  "greed": 28.037633949682547,
- "fear": 27.690319536017505,
+ "fear": 27.139484711926865,
  "zone": "neutral",
  "indicators": [
   {
@@ -25,17 +25,17 @@
    "id": "foreign_net_oi",
    "name": "外資台指期淨部位",
    "invert": false,
-   "value": -83654.0,
-   "score": 2.998065764023211,
-   "updated": "2026-08-26"
+   "value": -84836.0,
+   "score": 2.413127413127413,
+   "updated": "2026-08-27"
   },
   {
    "id": "pc_oi_ratio",
    "name": "Put/Call未平倉比",
    "invert": true,
-   "value": 103.04,
-   "score": 59.63391136801541,
-   "updated": "2026-08-26"
+   "value": 105.81,
+   "score": 55.28846153846153,
+   "updated": "2026-08-27"
   },
   {
    "id": "vol20",

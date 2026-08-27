@@ -1130,6 +1130,7 @@ date,indicator,value
 2026-08-24,foreign_net_oi,-82529.0
 2026-08-25,foreign_net_oi,-85380.0
 2026-08-26,foreign_net_oi,-83654.0
+2026-08-27,foreign_net_oi,-84836.0
 1988-05-01,m1b_yoy,31.39
 1988-06-01,m1b_yoy,32.17
 1988-07-01,m1b_yoy,30.67
@@ -3070,6 +3071,7 @@ date,indicator,value
 2026-08-24,pc_oi_ratio,95.81
 2026-08-25,pc_oi_ratio,101.99
 2026-08-26,pc_oi_ratio,103.04
+2026-08-27,pc_oi_ratio,105.81
 2024-07-10,pe,22.305
 2024-07-17,pe,22.55
 2024-07-31,pe,21.21
