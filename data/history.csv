@@ -8255,6 +8255,8 @@ date,indicator,value
 2026-09-22,tpex_down,514.0
 2026-09-23,tpex_down,412.0
 2026-09-24,tpex_down,380.0
+2026-09-29,tpex_down,399.0
+2026-09-30,tpex_down,269.0
 2026-07-01,tpex_high,437.56
 2026-07-02,tpex_high,439.51
 2026-07-03,tpex_high,445.97
@@ -8858,6 +8860,8 @@ date,indicator,value
 2026-09-22,tpex_limit_down,4.0
 2026-09-23,tpex_limit_down,3.0
 2026-09-24,tpex_limit_down,1.0
+2026-09-29,tpex_limit_down,2.0
+2026-09-30,tpex_limit_down,1.0
 2024-07-08,tpex_limit_up,39.0
 2024-07-09,tpex_limit_up,18.0
 2024-07-10,tpex_limit_up,26.0
@@ -9398,6 +9402,8 @@ date,indicator,value
 2026-09-22,tpex_limit_up,12.0
 2026-09-23,tpex_limit_up,16.0
 2026-09-24,tpex_limit_up,12.0
+2026-09-29,tpex_limit_up,21.0
+2026-09-30,tpex_limit_up,26.0
 2026-07-01,tpex_low,430.29
 2026-07-02,tpex_low,424.2
 2026-07-03,tpex_low,435.92
@@ -10064,6 +10070,8 @@ date,indicator,value
 2026-09-22,tpex_up,270.0
 2026-09-23,tpex_up,344.0
 2026-09-24,tpex_up,389.0
+2026-09-29,tpex_up,389.0
+2026-09-30,tpex_up,515.0
 2024-07-08,tpex_volume,142876.0
 2024-07-09,tpex_volume,137211.0
 2024-07-10,tpex_volume,115395.0
@@ -11141,6 +11149,8 @@ date,indicator,value
 2026-09-22,twse_down,636.0
 2026-09-23,twse_down,562.0
 2026-09-24,twse_down,546.0
+2026-09-29,twse_down,586.0
+2026-09-30,twse_down,187.0
 2024-07-08,twse_limit_down,3.0
 2024-07-09,twse_limit_down,7.0
 2024-07-10,twse_limit_down,2.0
@@ -11681,6 +11691,8 @@ date,indicator,value
 2026-09-22,twse_limit_down,2.0
 2026-09-23,twse_limit_down,1.0
 2026-09-24,twse_limit_down,1.0
+2026-09-29,twse_limit_down,0.0
+2026-09-30,twse_limit_down,0.0
 2024-07-08,twse_limit_up,19.0
 2024-07-09,twse_limit_up,11.0
 2024-07-10,twse_limit_up,22.0
@@ -12221,6 +12233,8 @@ date,indicator,value
 2026-09-22,twse_limit_up,14.0
 2026-09-23,twse_limit_up,15.0
 2026-09-24,twse_limit_up,11.0
+2026-09-29,twse_limit_up,24.0
+2026-09-30,twse_limit_up,32.0
 2024-07-08,twse_up,312.0
 2024-07-09,twse_up,213.0
 2024-07-10,twse_up,574.0
@@ -12761,6 +12775,8 @@ date,indicator,value
 2026-09-22,twse_up,330.0
 2026-09-23,twse_up,388.0
 2026-09-24,twse_up,386.0
+2026-09-29,twse_up,374.0
+2026-09-30,twse_up,828.0
 1960-01-01,us_m2_yoy,4.05
 1960-02-01,us_m2_yoy,3.72
 1960-03-01,us_m2_yoy,3.49
