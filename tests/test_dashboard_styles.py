@@ -138,7 +138,7 @@ def test_momentum_card_shows_an_independent_overheat_side():
 
 
 
-TABS = ("overview", "nav", "regime", "momentum", "watchlist", "mood", "charts")
+TABS = ("overview", "nav", "regime", "momentum", "watchlist", "analysis", "library", "mood", "charts")
 
 
 def _body():
@@ -184,3 +184,48 @@ def test_overview_has_clickable_summary_tiles_and_local_only_tabs_start_hidden()
         assert re.search(r'<button[^>]*data-tab-target="%s"[^>]*hidden' % tab, body), tab
     assert "grid-template-columns" in _rule(source, "#ov-tiles")
     assert ".tab-off" in source
+
+
+def test_analysis_tab_has_article_pane_and_collapsible_date_tree():
+    source = HTML.read_text()
+    body = _body()
+    card = body[body.index('id="analysis-card"'):body.index('id="hero"')]
+
+    assert 'data-tab="analysis"' in re.search(r'<div\b[^>]*id="analysis-card"[^>]*>', body).group(0)
+    assert 'id="an-article"' in card and 'id="an-tree"' in card
+    assert re.search(r'<button[^>]*data-tab-target="analysis"[^>]*hidden', body)
+    assert 'fetch("data/analysis/index.json")' in source
+    assert "function renderAnalysisTree(" in source and "function renderArticle(" in source
+    assert "grid-template-columns" in _rule(source, ".an-layout")
+    assert "<details" in source or "createElement(\"details\")" in source
+
+
+def test_entry_dates_link_to_that_days_analysis_of_the_same_stock():
+    source = HTML.read_text()
+
+    assert "an-stock-${s.code}" in source or 'an-stock-" + s.code' in source
+    assert "AN.codes" in source and "an-app-link" in source
+    assert "async function loadArticle(d, remember, focusCode)" in source
+    assert "scrollIntoView" in source[source.index("async function loadArticle"):]
+
+
+def test_library_tab_has_project_switch_article_pane_and_the_same_date_tree():
+    source = HTML.read_text()
+    body = _body()
+    card = body[body.index('id="library-card"'):body.index('id="hero"')]
+
+    assert 'data-tab="library"' in re.search(r'<div\b[^>]*id="library-card"[^>]*>', body).group(0)
+    assert 'id="lib-article"' in card and 'id="lib-tree"' in card and 'id="lib-projects"' in card and 'id="lib-filter"' in card
+    assert re.search(r'<button[^>]*data-tab-target="library"[^>]*hidden', body)
+    assert 'fetch("data/archive_index.json")' in source
+    assert "function renderLibraryTree(" in source and "function renderLibraryArticle(" in source
+    assert "DOMParser" in source and 'removeAttribute("style")' in source  # 內文 html 需清理
+
+
+def test_library_renders_transcripts_with_audio_players_and_clickable_timestamps():
+    source = HTML.read_text()
+    lib = source[source.index("function markdownToHtml("):source.index("function selectLibraryProject(")]
+
+    assert "<audio" in lib and "lib-ts" in lib
+    assert "currentTime" in lib
+    assert "a.file" in lib  # 逐字稿檔名不是 article.md
