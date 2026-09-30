@@ -54,13 +54,25 @@ def fetch_all(today_yyyymmdd):
     if us_m2:
         updates["us_m2_yoy"] = us_m2
 
-    breadth = attempt("breadth_ratio", lambda: fetchers.fetch_breadth(today_yyyymmdd))
+    breadth = attempt("breadth_ratio", lambda: fetchers.fetch_breadth_counts(today_yyyymmdd))
     if breadth:
-        date, up, down, limit_down = breadth
-        if limit_down is not None:
-            updates["taiex_limit_down"] = [(date, float(limit_down))]
+        date, up, down, limit_up, limit_down = breadth
+        updates["taiex_limit_down"] = [(date, float(limit_down))]
+        for key, val in zip(("twse_up", "twse_down", "twse_limit_up", "twse_limit_down"), (up, down, limit_up, limit_down)):
+            updates[key] = [(date, float(val))]  # 市場動能量表（chipwatch/momentum.py）
         if up + down:
             updates["breadth_ratio"] = [(date, up / (up + down))]
+
+    tpex_counts = attempt(
+        "tpex_counts",
+        lambda: fetchers.fetch_tpex_counts(
+            f"{today_yyyymmdd[:4]}/{today_yyyymmdd[4:6]}/{today_yyyymmdd[6:]}"
+        ),
+    )
+    if tpex_counts:
+        date, up, down, limit_up, limit_down = tpex_counts
+        for key, val in zip(("tpex_up", "tpex_down", "tpex_limit_up", "tpex_limit_down"), (up, down, limit_up, limit_down)):
+            updates[key] = [(date, float(val))]
 
     month = attempt("taiex_close", lambda: fetchers.fetch_taiex_month(today_yyyymmdd))
     if month and month["closes"]:

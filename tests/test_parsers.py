@@ -103,3 +103,24 @@ def test_parse_taiex_volumes_from_fmtqik():
 
     vols = parse_taiex_volumes(load("fmtqik.json"))
     assert vols[0] == ("2026-07-01", 1_367_817_795_171.0)
+
+
+def test_parse_breadth_counts_includes_limit_up_and_down():
+    from collector.fetchers import parse_breadth_counts
+
+    date, up, down, limit_up, limit_down = parse_breadth_counts(load("mi_index_ms.json"))
+    ref_date, ref_up, ref_down, ref_limit_down = parse_breadth(load("mi_index_ms.json"))
+
+    assert (date, up, down, limit_down) == (ref_date, ref_up, ref_down, ref_limit_down)
+    assert limit_up >= 0
+
+
+def test_parse_tpex_counts_reads_the_four_count_fields():
+    from collector.fetchers import parse_tpex_counts
+
+    date, up, down, limit_up, limit_down = parse_tpex_counts(load("tpex_highlight.json"))
+
+    from collector.fetchers import parse_tpex_highlight
+
+    assert date == parse_tpex_highlight(load("tpex_highlight.json"))[0]
+    assert up > 0 and down > 0 and limit_up >= 0 and limit_down >= 0

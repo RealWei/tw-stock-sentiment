@@ -8,5 +8,7 @@ notes/
 chipwatch/
 .claude/
 docs/data/watchlist.json
+docs/data/momentum.json
 docs/data/holdings.json
 股市資料/
+data/backfill_breadth.progress.json

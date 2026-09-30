@@ -17,6 +17,7 @@
   --border: rgba(10,37,64,0.10);
   --shadow: 0 1px 3px rgba(16,24,40,0.07), 0 1px 2px rgba(16,24,40,0.04);
   --accent: #635BFF;       /* series-1 藍紫（palette 驗證通過） */
+  --series-2: #eb6834;     /* series-2 橘（與 series-1 成對驗證通過；暗色另選一階） */
   --hot: #DF1B41;          /* diverging 暖極：過熱 */
   --cold: #635BFF;         /* diverging 冷極：過冷 */
   --mid: #eef1f6;          /* diverging 中性 */
@@ -40,6 +41,7 @@
     --border: rgba(240,242,247,0.09);
     --shadow: 0 1px 3px rgba(0,0,0,0.35);
     --accent: #7A73FF;
+    --series-2: #d95926;
     --hot: #F2555A;
     --cold: #7A73FF;
     --mid: #262b3a;
@@ -59,7 +61,7 @@ body {
   background: var(--page);
   color: var(--text-primary);
   padding: 0 20px 56px;
-  max-width: 1080px;
+  max-width: 1160px;
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
   transition: background-color 400ms ease, color 400ms ease; /* 明暗切換緩變，避免亮度突跳 */
@@ -75,6 +77,38 @@ header {
   transition: box-shadow 240ms ease;
 }
 header.scrolled { box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.06); }
+/* 分頁：每個大區塊一頁（頂層區塊以 data-tab 標記，JS 加 .tab-off 隱藏；區塊內容不搬動） */
+#tabs { flex: 1 0 100%; display: flex; gap: 4px; overflow-x: auto; padding: 2px 0 0; scrollbar-width: none; }
+#tabs::-webkit-scrollbar { display: none; }
+#tabs button {
+  font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  color: var(--text-secondary); background: transparent; border: 0; border-radius: 9px; padding: 7px 14px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+#tabs button:hover { background: var(--mid); }
+#tabs button[aria-selected="true"] { color: #fff; background: var(--accent); }
+#tabs button[hidden] { display: none; }
+.tab-off { display: none !important; }
+[data-tab] > .micro-label:first-child, .card[data-tab] > .micro-label:first-child { font-size: 13px; margin-bottom: 4px; }
+.card[data-tab] { padding: 24px 26px; }
+/* 總覽：各區塊的摘要小卡（點擊跳到該分頁）＋今日重點 */
+#ov-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.ov-tile {
+  text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+  padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; min-height: 132px;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+.ov-tile:hover { transform: translateY(-2px); border-color: var(--accent); }
+.ov-tile .k { font-size: 12.5px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; }
+.ov-tile .v { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.ov-tile .s { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.ov-tile .go { margin-top: auto; font-size: 12px; color: var(--accent); font-weight: 600; }
+.ov-tile.good .v { color: var(--good); }
+.ov-tile.bad .v { color: var(--hot); }
+.ov-tile.caution .v { color: var(--warn); }
+#ov-notes { margin: 8px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.8; color: var(--text-secondary); }
+#ov-notes b { color: var(--text-primary); }
 h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 #as-of { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .card {
@@ -244,11 +278,117 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 .wl-cell.zero { background: var(--hot); }
 .wl-cell.zero .n { color: #fff; }
 .wl-cell.zero .d, .wl-cell.zero .s { color: rgba(255,255,255,0.8); }
+/* 盤態辨識：當前盤態徽章＋自起始日起 65 個交易日方格（13×5，先上到下再左至右，左上最舊） */
+.rg-now { display: flex; gap: 14px; align-items: flex-start; margin: 10px 0 12px; }
+.rg-badge { font-size: 21px; font-weight: 700; padding: 8px 14px; border-radius: 10px; white-space: nowrap; line-height: 1.2; }
+.rg-meta { font-size: 12.5px; line-height: 1.55; padding-top: 4px; }
+#rg-title { font-weight: 600; }
+#rg-reasons { color: var(--text-muted); }
+.rg-bottom { margin-top: 6px; }
+#rg-hint { font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); }
+#rg-numbers { font-size: 12px; line-height: 1.6; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: pre-line; margin-bottom: 6px; }
+.rg-sig { font-size: 12.5px; line-height: 1.55; padding: 3px 0; border-top: 1px solid var(--grid); }
+.rg-sig.new { font-weight: 600; }
+.rg-sig .tag { font-size: 10px; font-weight: 600; color: var(--accent); margin-left: 6px; vertical-align: 1px; }
+/* 近期文章指引：來源／內文／追蹤行（達觀察區間或進入價位帶時琥珀色強調） */
+.rg-rem { border-top: 1px solid var(--grid); padding: 9px 0; }
+.rg-rem .src { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+.rg-rem .body { font-size: 12.5px; line-height: 1.65; color: var(--text-secondary); }
+.rg-rem .prog { margin-top: 6px; font-size: 12px; line-height: 1.6; padding: 6px 9px; border-radius: 7px; background: var(--surface-1); white-space: pre-line; font-variant-numeric: tabular-nums; }
+.rg-rem.alert .prog { background: rgba(232, 161, 60, 0.22); color: #d08a2a; font-weight: 600; }
+.rg-cell.dull { opacity: 0.62; }
+.rg-cell.settle { outline: 1px dashed var(--text-muted); outline-offset: -1px; }
+#rg-grid-wrap { overflow-x: auto; padding-bottom: 4px; }
+.rg-grid {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(52px, 1fr));
+  grid-template-rows: repeat(5, auto);
+  grid-auto-flow: column;
+  gap: 4px;
+  min-width: 728px;
+}
+.rg-cell { border-radius: 6px; padding: 5px 4px 6px; text-align: center; font-size: 10px; line-height: 1.35; color: var(--text-secondary); }
+.rg-cell .d { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.rg-cell .k { font-size: 11px; font-weight: 600; }
+/* 籌碼走勢 small multiples：每張單一 Y 軸；門檻細線＋右側標籤；今日重要變化＝外框＋徽章＋端點光暈 */
+#rg-charts-wrap { margin-top: 4px; }
+#rg-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 10px; }
+#rg-hl { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+#rg-hl:empty { display: none; }
+.cc-pill { font-size: 11.5px; line-height: 1.45; padding: 4px 9px; border-radius: 999px; background: var(--cold-wash); color: var(--text-primary); }
+.cc-pill b { font-weight: 650; margin-right: 5px; }
+.cc-pill.cross { background: rgba(232, 161, 60, 0.24); }
+.cc-thr { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.cc-caveat { flex-basis: 100%; font-size: 11.5px; color: var(--text-secondary); }
+.cc-panel { position: relative; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; padding: 9px 10px 4px; }
+.cc-panel.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.cc-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 10px; }
+.cc-title { font-size: 12px; font-weight: 600; }
+.cc-date { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-left: 6px; font-weight: 400; }
+.cc-legend { display: flex; gap: 12px; font-size: 11.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.cc-key { display: inline-block; width: 12px; height: 2px; border-radius: 1px; vertical-align: middle; margin-right: 4px; }
+.cc-legend b { color: var(--text-primary); font-weight: 650; margin-left: 4px; }
+.cc-badge { font-size: 11.5px; line-height: 1.5; color: var(--text-primary); margin-top: 3px; }
+.cc-badge span { display: inline-block; font-size: 10px; font-weight: 650; padding: 0 6px; border-radius: 999px; margin-right: 6px; background: var(--accent); color: #fff; }
+.cc-panel svg { display: block; width: 100%; height: auto; margin-top: auto; outline: none; touch-action: pan-y; }
+.cc-panel svg:focus-visible { box-shadow: 0 0 0 2px var(--accent); border-radius: 6px; }
+#rg-table-wrap { margin: 8px 0 2px; font-size: 12px; color: var(--text-muted); }
+#rg-table-wrap summary { cursor: pointer; width: fit-content; }
+#rg-table { overflow: auto; max-height: 320px; margin-top: 6px; }
+#rg-table table { border-collapse: collapse; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#rg-table th, #rg-table td { padding: 3px 9px; text-align: right; border-bottom: 1px solid var(--grid); }
+#rg-table th { position: sticky; top: 0; background: var(--surface-1); color: var(--text-secondary); font-weight: 600; }
+#rg-table td:first-child, #rg-table th:first-child { text-align: left; }
+#rg-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.rg-panic { background: var(--hot); color: #fff; }
+.rg-panic .d, .rg-panic .k { color: #fff; }
+.rg-overheat { background: rgba(169, 112, 255, 0.28); color: #9a6bff; }
+.rg-overheat .k { color: #9a6bff; }
+.rg-squeeze { background: rgba(255, 122, 69, 0.28); color: #e8703f; }
+.rg-squeeze .k { color: #e8703f; }
+.rg-strong { background: var(--good); color: #fff; }
+.rg-strong .d, .rg-strong .k { color: #fff; }
+.rg-creep { background: var(--good-wash); }
+.rg-creep .k { color: var(--good); }
+/* 市場動能量表：總分＋六分項＋事件狀態 */
+.mo-head { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin: 8px 0 12px; }
+.mo-badge { display: inline-block; font-size: 13px; font-weight: 650; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+.mo-badge.ignition, .mo-badge.confirmed { background: var(--good); color: #fff; }
+.mo-badge.warn { background: var(--hot); color: #fff; }
+.mo-badge.strong { background: var(--good-wash); color: var(--good); }
+.mo-badge.weak { background: var(--hot-wash); color: var(--hot); }
+.mo-badge.neutral { background: var(--mid); color: var(--text-secondary); }
+.mo-badge.heat-hot { background: #9a6bff; color: #fff; }
+.mo-badge.heat-warm { background: rgba(169, 112, 255, 0.28); color: #9a6bff; }
+.mo-badge.heat-normal { background: var(--mid); color: var(--text-secondary); }
+.mo-part.heat .bar i { background: #9a6bff; }
+.mo-events span.overheat { background: rgba(169, 112, 255, 0.28); color: #9a6bff; }
+.mo-part { display: grid; grid-template-columns: 64px minmax(120px, 1fr) 44px 40px; gap: 8px; align-items: center; font-size: 12.5px; padding: 3px 0; }
+.mo-part .bar { height: 8px; border-radius: 4px; background: var(--mid); overflow: hidden; }
+.mo-part .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.mo-part .v { text-align: right; font-variant-numeric: tabular-nums; }
+.mo-part .w { color: var(--text-muted); font-size: 11px; }
+.mo-flags { font-size: 12px; color: var(--text-secondary); line-height: 1.7; margin-top: 8px; }
+.mo-flags b { color: var(--text-primary); }
+.mo-events { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; margin-top: 8px; }
+.mo-events span { padding: 2px 8px; border-radius: 6px; background: var(--mid); font-variant-numeric: tabular-nums; }
+.mo-events span.ignition, .mo-events span.confirmed { background: var(--good-wash); color: var(--good); }
+.mo-events span.warn { background: var(--hot-wash); color: var(--hot); }
+.mo-picks { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+.mo-picks th, .mo-picks td { padding: 5px 6px; border-bottom: 1px solid var(--grid); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mo-picks th:first-child, .mo-picks td:first-child, .mo-picks th:nth-child(2), .mo-picks td:nth-child(2) { text-align: left; }
+.mo-picks th { color: var(--text-muted); font-weight: 600; font-size: 11px; }
+.mo-picks .diverge { color: var(--hot); font-weight: 600; }
+.rg-midrange { background: rgba(232, 161, 60, 0.26); }
+.rg-midrange .k { color: #d08a2a; }
+.rg-decline { background: var(--hot-wash); }
+.rg-decline .k { color: var(--hot); }
+.rg-range { background: var(--mid); }
 .wl-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); margin-top: 10px; flex-wrap: wrap; }
 .wl-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 .wl-list-title { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; margin: 18px 0 2px; }
-#wl-score-range { display: flex; align-items: center; gap: 6px; margin: 6px 0 8px; font-size: 12px; color: var(--text-muted); }
-#wl-score-range input {
+.wl-range { display: flex; align-items: center; gap: 6px; margin: 6px 0 8px; font-size: 12px; color: var(--text-muted); }
+.wl-range input {
   font: inherit; font-size: 12px; color: var(--text-primary);
   background: var(--surface-1); border: 1px solid var(--border); border-radius: 7px;
   padding: 3px 8px;
@@ -421,10 +561,27 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 <header>
   <h1>台股情緒儀表板</h1>
   <span id="as-of"></span>
+  <nav id="tabs" role="tablist" aria-label="儀表板分頁">
+    <button type="button" role="tab" data-tab-target="overview" aria-selected="true">總覽</button>
+    <button type="button" role="tab" data-tab-target="nav" aria-selected="false" hidden>加減碼導航</button>
+    <button type="button" role="tab" data-tab-target="regime" aria-selected="false" hidden>盤態辨識</button>
+    <button type="button" role="tab" data-tab-target="momentum" aria-selected="false" hidden>市場動能</button>
+    <button type="button" role="tab" data-tab-target="watchlist" aria-selected="false" hidden>觀察類股溫度計</button>
+    <button type="button" role="tab" data-tab-target="mood" aria-selected="false">情緒與水位</button>
+    <button type="button" role="tab" data-tab-target="charts" aria-selected="false">訊號與走勢</button>
+  </nav>
 </header>
 <div id="error"></div>
 
-<div class="card" id="mode-card" style="display:none;margin-bottom:16px">
+<div id="overview" data-tab="overview">
+  <div id="ov-tiles"></div>
+  <div class="card" id="ov-notes-card" style="display:none">
+    <div class="micro-label">今日重點</div>
+    <ul id="ov-notes"></ul>
+  </div>
+</div>
+
+<div data-tab="nav" class="card" id="mode-card" style="display:none;margin-bottom:16px">
   <div class="micro-label">加減碼導航（盤勢 × 個股九宮格）</div>
   <div id="mode-head">
     <div style="flex:0 0 auto">
@@ -459,7 +616,69 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   </div>
 </div>
 
-<div class="card" id="watchlist-card" style="display:none;margin-bottom:16px">
+<div data-tab="regime" class="card" id="regime-card" style="display:none;margin-bottom:16px">
+  <div class="micro-label">盤態辨識（淡定看台指籌碼方法論）</div>
+  <div class="rg-now">
+    <div class="rg-badge" id="rg-badge"></div>
+    <div class="rg-meta">
+      <div id="rg-title"></div>
+      <div id="rg-reasons"></div>
+    </div>
+  </div>
+  <div class="wl-range" id="rg-cal-range">
+    <span>觀察起始日</span>
+    <input type="date" id="rg-cal-from" aria-label="盤態方格起始日期">
+    <span id="rg-cal-hint"></span>
+  </div>
+  <div id="rg-grid-wrap"><div class="rg-grid" id="rg-grid"></div></div>
+  <div class="wl-legend" id="rg-legend"></div>
+  <div id="rg-charts-wrap" hidden>
+    <div class="wl-list-title">籌碼走勢（同上方日期窗口；細線＝關鍵門檻，淡色帶＝極端區）</div>
+    <div id="rg-hl"></div>
+    <div id="rg-charts"></div>
+    <details id="rg-table-wrap"><summary>資料表</summary><div id="rg-table"></div></details>
+  </div>
+  <div class="rg-bottom">
+    <div class="wl-list-title">操作提示</div>
+    <div id="rg-hint"></div>
+    <div class="wl-list-title">當日重要籌碼變化</div>
+    <div id="rg-numbers"></div>
+    <div id="rg-signals"></div>
+    <div class="wl-list-title">近期文章指引</div>
+    <div id="rg-reminders"></div>
+  </div>
+</div>
+
+<div data-tab="momentum" class="card" id="momentum-card" style="display:none;margin-bottom:16px">
+  <div class="micro-label">市場動能量表（觀察數量 × 漲停家數 × 廣度 × 量能 × 指數結構 × 融資）</div>
+  <div class="mo-head">
+    <div style="flex:0 0 auto">
+      <div id="mo-score" style="font-size:44px;font-weight:650;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">–</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+        <span class="mo-badge neutral" id="mo-state"></span>
+        <span class="mo-badge heat-normal" id="mo-heat"></span>
+        <span id="mo-date" style="font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums"></span>
+      </div>
+    </div>
+    <div style="flex:1 1 300px;min-width:240px">
+      <div class="meter"><div class="seg cold"></div><div class="seg hot"></div><div class="dot" id="mo-dot"></div></div>
+      <div class="meter-scale"><span>0（動能枯竭）</span><span>50</span><span>100（全面擴張）</span></div>
+      <div id="mo-parts" style="margin-top:10px"></div>
+      <div class="wl-list-title" style="margin-top:12px">過熱側（與動能分獨立；位階為主）</div>
+      <div id="mo-heat-parts"></div>
+    </div>
+  </div>
+  <div class="mo-flags" id="mo-flags"></div>
+  <div class="mo-events" id="mo-events"></div>
+  <div class="wl-list-title">總分走勢（近 120 個交易日；綠帶 ≥65 擴張、紅帶 ≤35 枯竭）</div>
+  <div class="chart-box" id="mo-chart"></div>
+  <div class="wl-list-title">過熱側走勢（紫帶 ≥65 過熱、淡紫 50–65 偏熱）</div>
+  <div class="chart-box" id="mo-heat-chart"></div>
+  <div class="wl-list-title">盯盤名單 vs 市場動能（個股強、市場弱＝先減碼再等第二拍）</div>
+  <div id="mo-picks"></div>
+</div>
+
+<div data-tab="watchlist" class="card" id="watchlist-card" style="display:none;margin-bottom:16px">
   <div class="micro-label">投資癮觀察類股溫度計</div>
   <form id="wl-form" style="display:none" autocomplete="off">
     <input type="date" id="wl-date" aria-label="日期">
@@ -469,6 +688,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <span id="wl-form-msg"></span>
   </form>
   <div class="wl-alert" id="wl-alert"></div>
+  <div class="wl-range" id="wl-cal-range">
+    <span>觀察起始日</span>
+    <input type="date" id="wl-cal-from" aria-label="溫度計起始日期">
+    <span id="wl-cal-hint"></span>
+  </div>
   <div id="wl-calendars"></div>
   <div class="wl-legend">
     <span><i style="background:var(--good-wash)"></i>有觀察類股（數字＝檔數）</span>
@@ -477,17 +701,18 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <span><i style="background:var(--good);border-radius:50%"></i><i style="background:#e8a13c;border-radius:50%"></i><i style="background:var(--hot);border-radius:50%"></i>格底圓點＝每條當日燈號（綠正常／黃注意／紅警戒）</span>
   </div>
   <div class="wl-list-title">燈號分數走勢（🟢 +1／🟡 −1／🔴 −2 加總；0 以上＝健康）</div>
-  <div id="wl-score-range">
+  <div class="wl-range" id="wl-score-range">
     <input type="date" id="wl-score-from" aria-label="開始日期">
     <span>～</span>
     <input type="date" id="wl-score-to" aria-label="結束日期">
   </div>
   <div class="chart-box" id="wl-score-chart"></div>
-  <div class="wl-list-title">近 90 個交易日名單</div>
+  <div class="wl-list-title">名單（自起始日起 90 個交易日）</div>
   <div id="wl-list"></div>
 </div>
 
-<div class="card" id="hero">
+
+<div data-tab="mood" class="card" id="hero">
   <div id="gauge-wrap"></div>
   <div id="hero-text">
     <div id="hero-score">–</div>
@@ -497,7 +722,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   </div>
 </div>
 
-<div class="card" id="position-card" style="display:none;margin-bottom:16px">
+<div data-tab="mood" class="card" id="position-card" style="display:none;margin-bottom:16px">
   <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
     <div style="flex:0 0 auto">
       <div class="micro-label">建議持股水位</div>
@@ -516,25 +741,25 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   </div>
 </div>
 
-<div class="card chart-card" id="pos-chart-card" style="display:none">
+<div data-tab="mood" class="card chart-card" id="pos-chart-card" style="display:none">
   <div class="chart-head"><span class="chart-title">持股水位每日走勢（2026-01 起）</span></div>
   <div class="chart-box" id="position-chart"></div>
 </div>
 
-<div id="cards"></div>
+<div data-tab="mood" id="cards"></div>
 
-<div class="section-title">技術訊號（加權／櫃買，近 30 個交易日）</div>
-<div id="signals"></div>
+<div data-tab="charts" class="section-title">技術訊號（加權／櫃買，近 30 個交易日）</div>
+<div data-tab="charts" id="signals"></div>
 
-<div class="section-title">走勢</div>
-<div id="range-row" role="group" aria-label="時間範圍"></div>
+<div data-tab="charts" class="section-title">走勢</div>
+<div data-tab="charts" id="range-row" role="group" aria-label="時間範圍"></div>
 
-<div class="card chart-card">
+<div data-tab="charts" class="card chart-card">
   <div class="chart-head"><span class="chart-title">情緒總分（0=極度悲觀，100=極度樂觀）</span></div>
   <div class="chart-box" id="composite-chart"></div>
 </div>
 
-<div class="card chart-card">
+<div data-tab="charts" class="card chart-card">
   <div class="chart-head">
     <span class="chart-title" id="ind-chart-title">指標走勢</span>
     <select id="ind-select" aria-label="選擇指標"></select>
@@ -542,7 +767,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   <div class="chart-box" id="indicator-chart"></div>
 </div>
 
-<div class="card chart-card" id="money-card" style="display:none">
+<div data-tab="charts" class="card chart-card" id="money-card" style="display:none">
   <div class="chart-head"><span class="chart-title">資金面：M1B−M2 年增率差（黃金／死亡交叉，近 10 年）</span></div>
   <div id="money-status" style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;font-variant-numeric:tabular-nums"></div>
   <div class="chart-box" id="money-chart"></div>
@@ -550,8 +775,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
   <div class="chart-box" id="us-m2-chart"></div>
 </div>
 
-<div class="section-title">指標明細</div>
-<div class="card" style="overflow-x:auto">
+<div data-tab="charts" class="section-title">指標明細</div>
+<div data-tab="charts" class="card" style="overflow-x:auto">
   <table id="detail-table">
     <thead><tr>
       <th>指標</th><th class="num">現值</th><th class="num">分數</th><th>方向</th><th>更新日</th>
@@ -588,6 +813,106 @@ let wlCountsByCode = null;  // 觀察名單次數（代號→日期清單），�
 let currentInd = "meter_greed";
 
 const el = id => document.getElementById(id);
+
+/* ---------- 分頁與總覽 ---------- */
+const OV = {};                       // 各資料檔最新內容，總覽從這裡取值
+const TAB_OF = { mode: "nav", regime: "regime", momentum: "momentum", watchlist: "watchlist" };
+let regimeSizedWhileHidden = false;
+function activateTab(name, remember) {
+  const buttons = [...document.querySelectorAll("#tabs button")];
+  const btn = buttons.find(b => b.dataset.tabTarget === name && !b.hidden);
+  if (!btn) name = "overview";
+  document.body.dataset.activeTab = name;
+  for (const b of buttons) b.setAttribute("aria-selected", String(b.dataset.tabTarget === name));
+  for (const block of document.querySelectorAll("[data-tab]")) block.classList.toggle("tab-off", block.dataset.tab !== name);
+  if (name === "regime" && regimeSizedWhileHidden && OV.regime) {
+    regimeSizedWhileHidden = false;  // 隱藏時量不到寬度，首次顯示再排一次籌碼小圖
+    renderRegime(OV.regime);
+  }
+  if (remember) {
+    try { localStorage.setItem("dashboard-tab", name); } catch { /* 隱私模式等情況略過 */ }
+    history.replaceState(null, "", "#" + name);
+    window.scrollTo({ top: 0 });
+  }
+}
+function showTab(name) {
+  const b = document.querySelector(`#tabs button[data-tab-target="${name}"]`);
+  if (!b || !b.hidden) return;
+  b.hidden = false;
+  let want = location.hash.slice(1);
+  if (!want) { try { want = localStorage.getItem("dashboard-tab"); } catch { /* 同上 */ } }
+  if (want === name) activateTab(name, false);  // 資料晚到的分頁：補上使用者原本要看的那頁
+}
+function initTabs() {
+  for (const b of document.querySelectorAll("#tabs button")) {
+    b.addEventListener("click", () => activateTab(b.dataset.tabTarget, true));
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("dashboard-tab"); } catch { /* 同上 */ }
+  activateTab(location.hash.slice(1) || saved || "overview", false);
+}
+function ovSet(key, data) {
+  OV[key] = data;
+  if (TAB_OF[key]) showTab(TAB_OF[key]);
+  renderOverview();
+}
+function renderOverview() {
+  const tiles = [], notes = [];
+  const signed = v => (v > 0 ? "+" : "") + v;
+  if (OV.mode) {
+    const m = OV.mode;
+    tiles.push({ tab: "nav", k: "盤勢（加減碼導航）", v: m.label, cls: m.M === "up" ? "good" : m.M === "down" ? "bad" : "",
+      s: `全帳戶多單上限 ${m.cap}%｜連續第 ${m.streak} 日` });
+    if (m.transition) notes.push(`<b>盤勢轉換</b>　${m.transition}`);
+  }
+  if (OV.regime) {
+    const c = OV.regime.current;
+    tiles.push({ tab: "regime", k: "盤態辨識", v: `${c.emoji} ${c.label}`, cls: "", s: `連續第 ${c.streak} 個交易日` });
+    if (c.hint) notes.push(`<b>盤態・${c.label}</b>　${c.hint}`);
+  }
+  if (OV.momentum) {
+    const mo = OV.momentum;
+    const cls = ["ignition", "confirmed", "strong"].includes(mo.state) ? "good" : ["warn", "weak"].includes(mo.state) ? "bad" : "";
+    tiles.push({ tab: "momentum", k: "市場動能", v: `${Math.round(mo.score)}・${MO_STATE[mo.state] || mo.state}`, cls,
+      s: mo.heat == null ? mo.date : `過熱側 ${Math.round(mo.heat)}（${MO_HEAT[mo.heat_level]}）` });
+    const ev = (mo.events || []).slice(-1)[0];
+    if (ev) notes.push(`<b>動能</b>　最近事件：${ev.date.slice(5)}${ev.days > 1 ? "～" + ev.end.slice(5) : ""} ${MO_STATE[ev.state]}；連 ${mo.zero_streak} 日無觀察類股`);
+  }
+  if (OV.watchlist) {
+    const w = OV.watchlist, d = w.days[w.days.length - 1], lv = (w.alert || {}).level;
+    tiles.push({ tab: "watchlist", k: "觀察類股溫度計", v: `觀察 ${d.watch.length}・稍微 ${d.slight.length}`,
+      cls: lv === "warn" ? "bad" : lv === "watch" ? "caution" : "good", s: `${d.date}｜${((w.alert || {}).lines || [""])[0].replace(/——.*/, "")}` });
+    for (const line of ((w.alert || {}).lines || []).slice(0, 2)) notes.push(`<b>溫度計</b>　${line}`);
+  }
+  if (OV.latest) {
+    const l = OV.latest;
+    tiles.push({ tab: "mood", k: "情緒總分", v: `${Math.round(l.composite)}・${zoneText(l.zone)}`,
+      cls: l.zone === "overheat" ? "bad" : l.zone === "cold" ? "good" : "", s: `過熱計 ${Math.round(l.greed)}｜恐慌計 ${Math.round(l.fear)}` });
+  }
+  if (OV.position) {
+    const p = OV.position.latest;
+    tiles.push({ tab: "mood", k: "建議持股水位", v: `${p.score}%`, cls: "",
+      s: `${p.date}｜較前日 ${p.delta == null ? "—" : signed(p.delta) + " 個百分點"}` });
+    for (const r of (p.reasons || []).slice(0, 2)) notes.push(`<b>水位</b>　${r}`);
+  }
+  const box = el("ov-tiles");
+  box.textContent = "";
+  for (const tl of tiles) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ov-tile " + tl.cls;
+    for (const [cls, text] of [["k", tl.k], ["v", tl.v], ["s", tl.s], ["go", "查看完整區塊 →"]]) {
+      const d = document.createElement("div");
+      d.className = cls;
+      d.textContent = text;
+      b.appendChild(d);
+    }
+    b.addEventListener("click", () => activateTab(tl.tab, true));
+    box.appendChild(b);
+  }
+  el("ov-notes-card").style.display = notes.length ? "" : "none";
+  el("ov-notes").innerHTML = notes.map(n => `<li>${n}</li>`).join("");
+}
 
 function zoneText(zone) {
   return zone === "overheat" ? "過熱" : zone === "cold" ? "過冷" : "中性";
@@ -735,6 +1060,7 @@ const MODE_GRID = [
 ];
 
 function renderModeCard(mode) {
+  ovSet("mode", mode);
   el("mode-card").style.display = "";
   const st = el("mode-state");
   st.textContent = mode.label;
@@ -1108,6 +1434,7 @@ function showWlPop(anchor, name, hits) {
 
 /* ---------- 觀察類股溫度計（近 90 個交易日 15×6 方格＋名單） ---------- */
 function renderWatchlist(data) {
+  ovSet("watchlist", data);
   el("watchlist-card").style.display = "";
 
   const box = el("wl-alert");
@@ -1119,47 +1446,67 @@ function renderWatchlist(data) {
     box.appendChild(div);
   }
 
-  const gridDays = data.days.slice(-90);
-
-  const wrap = el("wl-calendars");
-  wrap.textContent = "";
-  const grid = document.createElement("div");
-  grid.className = "wl-cal-grid";
-  for (const e of gridDays) {
-    const cell = document.createElement("div");
-    cell.className = "wl-cell";
-    const day = document.createElement("div");
-    day.className = "d";
-    day.textContent = e.date.slice(5).replace("-", "/");
-    cell.appendChild(day);
-
-    const w = e.watch.length, s = e.slight.length;
-    cell.classList.add(w ? "has" : (s ? "slight-only" : "zero"));
-    const lightLines = e.light_lines || [];
-    cell.title = e.date + (lightLines.length ? "\n當日燈號：\n" + lightLines.join("\n") : "") +
-      "\n觀察：" + (e.watch.join("、") || "—") +
-      "\n稍微觀察：" + (e.slight.join("、") || "—");
-    const lights = document.createElement("div");
-    lights.className = "wl-lights";
-    for (const level of (e.lights || (e.level ? [e.level] : []))) {
-      const lv = document.createElement("span");
-      lv.className = "wl-lv " + level;
-      lights.appendChild(lv);
+  // 溫度計窗口：自 picker 起始日起 90 個記錄交易日（15×6），預設最近 90 天；日曆格與名單共用
+  const calFrom = el("wl-cal-from");
+  if (data.days.length) {
+    calFrom.min = data.days[0].date;
+    calFrom.max = data.days[data.days.length - 1].date;
+    if (!calFrom.value || calFrom.value < calFrom.min || calFrom.value > calFrom.max) {
+      calFrom.value = data.days[Math.max(0, data.days.length - 90)].date;
     }
-    const n = document.createElement("div");
-    n.className = "n";
-    n.textContent = w;
-    cell.appendChild(n);
-    if (s) {
-      const sub = document.createElement("div");
-      sub.className = "s";
-      sub.textContent = "稍 " + s;
-      cell.appendChild(sub);
-    }
-    cell.appendChild(lights);
-    grid.appendChild(cell);
   }
-  wrap.appendChild(grid);
+  function windowDays() {
+    let start = data.days.findIndex(e => e.date >= calFrom.value);
+    // 起始日之後不足 90 個交易日時，自動往前移補滿 90 格，並把 picker 改成實際起始日
+    if (start < 0 || start > data.days.length - 90) start = Math.max(0, data.days.length - 90);
+    if (data.days[start] && calFrom.value !== data.days[start].date) calFrom.value = data.days[start].date;
+    const w = data.days.slice(start, start + 90);
+    el("wl-cal-hint").textContent = w.length
+      ? `${w[0].date} ～ ${w[w.length - 1].date}（${w.length} 個交易日）` : "";
+    return w;
+  }
+
+  function drawGrid(gridDays) {
+    const wrap = el("wl-calendars");
+    wrap.textContent = "";
+    const grid = document.createElement("div");
+    grid.className = "wl-cal-grid";
+    for (const e of gridDays) {
+      const cell = document.createElement("div");
+      cell.className = "wl-cell";
+      const day = document.createElement("div");
+      day.className = "d";
+      day.textContent = e.date.slice(5).replace("-", "/");
+      cell.appendChild(day);
+
+      const w = e.watch.length, s = e.slight.length;
+      cell.classList.add(w ? "has" : (s ? "slight-only" : "zero"));
+      const lightLines = e.light_lines || [];
+      cell.title = e.date + (lightLines.length ? "\n當日燈號：\n" + lightLines.join("\n") : "") +
+        "\n觀察：" + (e.watch.join("、") || "—") +
+        "\n稍微觀察：" + (e.slight.join("、") || "—");
+      const lights = document.createElement("div");
+      lights.className = "wl-lights";
+      for (const level of (e.lights || (e.level ? [e.level] : []))) {
+        const lv = document.createElement("span");
+        lv.className = "wl-lv " + level;
+        lights.appendChild(lv);
+      }
+      const n = document.createElement("div");
+      n.className = "n";
+      n.textContent = w;
+      cell.appendChild(n);
+      if (s) {
+        const sub = document.createElement("div");
+        sub.className = "s";
+        sub.textContent = "稍 " + s;
+        cell.appendChild(sub);
+      }
+      cell.appendChild(lights);
+      grid.appendChild(cell);
+    }
+    wrap.appendChild(grid);
+  }
 
   // 燈號分數走勢：每日燈號加總（🟢+1/🟡−1/🔴−2），起訖日期自選，hover 顯示當日燈號明細
   if (data.scores && data.scores.length > 1) {
@@ -1236,35 +1583,491 @@ function renderWatchlist(data) {
     });
   }
 
-  const list = el("wl-list");
-  list.textContent = "";
-  for (const e of [...data.days].reverse()) {
-    const row = document.createElement("div");
-    row.className = "wl-row";
-    const dt = document.createElement("div");
-    dt.className = "dt";
-    dt.textContent = e.date.slice(5);
-    const names = document.createElement("div");
-    names.className = "names";
-    const wDiv = document.createElement("div");
-    if (e.watch.length) {
-      wDiv.appendChild(document.createTextNode("觀察："));
-      fillNames(wDiv, e.watch);
-    } else {
-      const none = document.createElement("span");
-      none.className = "none";
-      none.textContent = e.slight.length ? "無觀察類股" : "掛零";
-      wDiv.appendChild(none);
+  function drawList(gridDays) {
+    const list = el("wl-list");
+    list.textContent = "";
+    for (const e of [...gridDays].reverse()) {
+      const row = document.createElement("div");
+      row.className = "wl-row";
+      const dt = document.createElement("div");
+      dt.className = "dt";
+      dt.textContent = e.date.slice(5);
+      const names = document.createElement("div");
+      names.className = "names";
+      const wDiv = document.createElement("div");
+      if (e.watch.length) {
+        wDiv.appendChild(document.createTextNode("觀察："));
+        fillNames(wDiv, e.watch);
+      } else {
+        const none = document.createElement("span");
+        none.className = "none";
+        none.textContent = e.slight.length ? "無觀察類股" : "掛零";
+        wDiv.appendChild(none);
+      }
+      const sDiv = document.createElement("div");
+      sDiv.className = "muted";
+      sDiv.appendChild(document.createTextNode("稍微觀察："));
+      if (e.slight.length) fillNames(sDiv, e.slight);
+      else sDiv.appendChild(document.createTextNode("—"));
+      names.append(wDiv, sDiv);
+      row.append(dt, names);
+      list.appendChild(row);
     }
-    const sDiv = document.createElement("div");
-    sDiv.className = "muted";
-    sDiv.appendChild(document.createTextNode("稍微觀察："));
-    if (e.slight.length) fillNames(sDiv, e.slight);
-    else sDiv.appendChild(document.createTextNode("—"));
-    names.append(wDiv, sDiv);
-    row.append(dt, names);
-    list.appendChild(row);
   }
+
+  const drawWindow = () => { const w = windowDays(); drawGrid(w); drawList(w); };
+  calFrom.onchange = drawWindow;  // 用指派：重渲染時覆蓋、不殘留舊閉包
+  drawWindow();
+}
+
+/* 籌碼走勢 small multiples。lo/hi＝data.days 的索引窗口（與方格同）；C.series 與 days 同索引。
+   門檻含進 Y 範圍（距門檻多遠一眼可見）；十字線各圖同步、表頭數值隨游標改讀該日；
+   今日重點（後端判定：跨門檻／日變動達近一年 90 分位）只在窗口含最新日時標示。 */
+function renderChipCharts(data, lo, hi) {
+  const C = data.charts, wrap = el("rg-charts-wrap");
+  if (!C || !C.panels) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  const host = el("rg-charts"), n = hi - lo, last = n - 1;
+  host.textContent = "";
+  const NS = "http://www.w3.org/2000/svg";
+  const S = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const FMT = {
+    int: v => Math.round(v).toLocaleString(),
+    pct: v => Math.round(v) + "%",
+    pct1: v => v.toFixed(1) + "%",
+  };
+  const COLORS = ["var(--accent)", "var(--series-2)"];
+  const hls = hi === data.days.length ? (C.highlights || []) : [];
+  const md = i => data.days[lo + i].date.slice(5).replace("-", "/");
+
+  const strip = el("rg-hl");
+  strip.textContent = "";
+  for (const h of hls) {
+    const pill = document.createElement("span"), b = document.createElement("b");
+    pill.className = "cc-pill " + h.kind;
+    b.textContent = h.kind === "cross" ? "跨門檻" : "大變動";
+    pill.append(b, document.createTextNode(h.text));
+    strip.appendChild(pill);
+  }
+  if (hls.length && C.caveat) {
+    const note = document.createElement("div");
+    note.className = "cc-caveat";
+    note.textContent = "⚠ " + C.caveat;
+    strip.appendChild(note);
+  }
+
+  function niceTicks(min, max, count) {
+    const raw = (max - min || 1) / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => k >= raw);
+    const out = [];
+    for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) out.push(v);
+    return out;
+  }
+
+  // viewBox 寬度跟著欄寬走，字才不會在手機上被縮小；窄欄把門檻標籤收進圖內
+  const hostW = host.clientWidth || 960, nCols = Math.max(1, Math.floor((hostW + 10) / 350));
+  const W = Math.round(Math.max(300, Math.min(500, (hostW - 10 * (nCols - 1)) / nCols - 22)));
+  const narrow = W < 400, H = 186, m = { t: 8, r: narrow ? 14 : 112, b: 20, l: 46 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const X = i => m.l + (n > 1 ? (i / (n - 1)) * iw : iw / 2);
+  const hovers = [];
+  const setHover = (idx, src) => hovers.forEach((h, k) => h && h(idx, k === src));
+
+  C.panels.forEach((P, pi) => {
+    const fmt = FMT[P.fmt] || FMT.int;
+    const color = si => (P.context ? "var(--text-muted)" : COLORS[si]);
+    const cols = P.series.map(([key]) => C.series[key].slice(lo, hi));
+    const vals = cols.flat().filter(v => v != null);
+    if (!vals.length) return;
+    let y0, y1;
+    if (P.domain) [y0, y1] = P.domain;
+    else {
+      const all = vals.concat(P.thresholds.map(t => t[0]));
+      y0 = Math.min(...all); y1 = Math.max(...all);
+      const pad = (y1 - y0 || 1) * 0.07;
+      y0 -= pad; y1 += pad;
+    }
+    const Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ih;
+    const mine = hls.filter(h => h.panel === P.key);
+
+    const panel = document.createElement("div");
+    panel.className = "cc-panel" + (mine.length ? " today" : "");
+    const head = document.createElement("div"), title = document.createElement("div");
+    const dateEl = document.createElement("span"), legend = document.createElement("div");
+    head.className = "cc-head"; title.className = "cc-title"; dateEl.className = "cc-date"; legend.className = "cc-legend";
+    title.append(document.createTextNode(P.title), dateEl);
+    const readouts = P.series.map(([, label], si) => {
+      const item = document.createElement("span"), key = document.createElement("i"), val = document.createElement("b");
+      key.className = "cc-key";
+      key.style.background = color(si);
+      item.append(key, document.createTextNode(label), val);
+      legend.appendChild(item);
+      return val;
+    });
+    head.append(title, legend);
+    panel.appendChild(head);
+    for (const h of mine) {
+      const bd = document.createElement("div"), tag = document.createElement("span");
+      bd.className = "cc-badge";
+      tag.textContent = "今日";
+      bd.append(tag, document.createTextNode(h.text));
+      panel.appendChild(bd);
+    }
+
+    const svg = S("svg", { viewBox: `0 0 ${W} ${H}`, tabindex: "0", role: "img",
+      "aria-label": `${P.title}：${P.series.map(([, l], si) => l + " " + (cols[si][last] == null ? "—" : fmt(cols[si][last]))).join("、")}` });
+    for (const [from, to, kind] of P.zones || []) {
+      svg.appendChild(S("rect", { x: m.l, y: Y(to), width: iw, height: Y(from) - Y(to), fill: `var(--${kind}-wash)` }));
+    }
+    for (const v of niceTicks(y0, y1, 3)) {
+      svg.appendChild(S("line", { x1: m.l, x2: m.l + iw, y1: Y(v), y2: Y(v), stroke: "var(--grid)", "stroke-width": 1 }));
+      svg.appendChild(S("text", { x: m.l - 6, y: Y(v) + 3.5, "text-anchor": "end", "font-size": 10, fill: "var(--text-muted)" }, fmt(v)));
+    }
+    for (const k of [...new Set([0, Math.round(last / 2), last])]) {
+      svg.appendChild(S("text", { x: X(k), y: H - 5, "font-size": 10, fill: "var(--text-muted)",
+        "text-anchor": k === 0 ? "start" : k === last ? "end" : "middle" }, md(k)));
+    }
+    // 門檻：細實線＋右側文字（文字色、不用系列色）；標籤過近時往下錯開
+    let labelY = -99;
+    const named = [];
+    for (const [v, label] of [...P.thresholds].sort((a, b) => b[0] - a[0])) {
+      if (v < y0 || v > y1) continue;
+      svg.appendChild(S("line", { x1: m.l, x2: m.l + iw + (narrow ? 0 : 4), y1: Y(v), y2: Y(v), stroke: "var(--baseline)", "stroke-width": 1 }));
+      // 標籤本身沒寫數值的（散戶分位帶）在窄欄說明列補上數值，才能對回 Y 軸
+      named.push(label.includes(fmt(v).replace("%", "")) ? label : `${label} ${fmt(v)}`);
+      if (narrow) continue;
+      labelY = Math.max(Y(v) + 3.5, labelY + 11);
+      svg.appendChild(S("text", { x: m.l + iw + 7, y: labelY, "font-size": 10, fill: "var(--text-secondary)" }, label));
+    }
+    cols.forEach((col, si) => {
+      let d = "", pen = false;
+      col.forEach((v, i) => {
+        if (v == null) { pen = false; return; }
+        d += `${pen ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`;
+        pen = true;
+      });
+      svg.appendChild(S("path", { d, fill: "none", stroke: color(si), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      if (col[last] == null) return;
+      if (mine.some(h => h.series === P.series[si][0])) {
+        svg.appendChild(S("circle", { cx: X(last), cy: Y(col[last]), r: 10, fill: color(si), opacity: 0.22 }));
+      }
+      svg.appendChild(S("circle", { cx: X(last), cy: Y(col[last]), r: 4, fill: color(si), stroke: "var(--surface-1)", "stroke-width": 2 }));
+    });
+    if (narrow && named.length) {
+      const cap = document.createElement("div");
+      cap.className = "cc-thr";
+      cap.textContent = "門檻（由上而下）：" + named.join("・");
+      panel.appendChild(cap);
+    }
+    const xhair = S("line", { y1: m.t, y2: m.t + ih, stroke: "var(--baseline)", "stroke-width": 1, visibility: "hidden" });
+    const dots = cols.map((_, si) => S("circle", { r: 4, fill: color(si), stroke: "var(--surface-1)", "stroke-width": 2, visibility: "hidden" }));
+    svg.append(xhair, ...dots, S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }));
+    const tip = document.createElement("div");
+    tip.className = "tooltip";
+    panel.append(svg, tip);
+    host.appendChild(panel);
+
+    hovers[pi] = (idx, isSource) => {
+      const at = idx == null ? last : idx;
+      dateEl.textContent = idx == null ? "" : md(at);
+      cols.forEach((col, si) => { readouts[si].textContent = col[at] == null ? "—" : fmt(col[at]); });
+      if (idx == null) {
+        xhair.setAttribute("visibility", "hidden");
+        dots.forEach(c => c.setAttribute("visibility", "hidden"));
+        tip.style.visibility = "hidden";
+        return;
+      }
+      xhair.setAttribute("x1", X(at)); xhair.setAttribute("x2", X(at));
+      xhair.removeAttribute("visibility");
+      cols.forEach((col, si) => {
+        if (col[at] == null) { dots[si].setAttribute("visibility", "hidden"); return; }
+        dots[si].setAttribute("cx", X(at)); dots[si].setAttribute("cy", Y(col[at]));
+        dots[si].removeAttribute("visibility");
+      });
+      if (!isSource) { tip.style.visibility = "hidden"; return; }
+      const day = data.days[lo + at], dt = document.createElement("div");
+      tip.textContent = "";
+      dt.className = "tt-date";
+      dt.textContent = `${day.date}｜${data.labels[day.key].label}${day.phase ? "・" + day.phase : ""}`;
+      tip.appendChild(dt);
+      cols.forEach((col, si) => {
+        const row = document.createElement("div"), key = document.createElement("i"), lab = document.createElement("span");
+        row.className = "tt-value";
+        row.style.fontSize = "13px";
+        key.className = "cc-key";
+        key.style.background = color(si);
+        lab.style.cssText = "font-weight:400;font-size:11.5px;color:var(--text-secondary);margin-left:6px";
+        lab.textContent = P.series[si][1];
+        row.append(key, document.createTextNode(col[at] == null ? "—" : fmt(col[at])), lab);
+        tip.appendChild(row);
+      });
+      // SVG 元素沒有 offsetLeft／offsetTop，用外框差算相對 panel 的位置
+      const rect = svg.getBoundingClientRect(), box = panel.getBoundingClientRect();
+      const px = rect.left - box.left + (X(at) / W) * rect.width, flip = X(at) > m.l + iw * 0.55;
+      tip.style.visibility = "visible";
+      tip.style.left = px + (flip ? -10 : 10) + "px";
+      tip.style.top = rect.top - box.top + m.t + 6 + "px";
+      tip.style.transform = flip ? "translate(-100%, 0)" : "none";
+    };
+
+    let kIdx = last;
+    svg.addEventListener("pointermove", ev => {
+      const rect = svg.getBoundingClientRect();
+      const sx = ((ev.clientX - rect.left) / (rect.width || 1)) * W;
+      kIdx = Math.max(0, Math.min(last, Math.round(((sx - m.l) / iw) * last)));
+      setHover(kIdx, pi);
+    });
+    svg.addEventListener("pointerleave", () => setHover(null, pi));
+    svg.addEventListener("focus", () => setHover(kIdx, pi));
+    svg.addEventListener("blur", () => setHover(null, pi));
+    svg.addEventListener("keydown", ev => {
+      if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+      ev.preventDefault();
+      kIdx = Math.max(0, Math.min(last, kIdx + (ev.key === "ArrowLeft" ? -1 : 1)));
+      setHover(kIdx, pi);
+    });
+  });
+  setHover(null, -1);
+
+  // 資料表（tooltip 不是唯一管道）：同窗口、最新在上
+  const colsAll = C.panels.flatMap(P => P.series.map(([key, label]) => ({ key, label, fmt: FMT[P.fmt] || FMT.int })));
+  const tbl = document.createElement("table");
+  const addRow = (tag, cells) => {
+    const tr = document.createElement("tr");
+    for (const t of cells) {
+      const c = document.createElement(tag);
+      c.textContent = t;
+      tr.appendChild(c);
+    }
+    tbl.appendChild(tr);
+  };
+  // 表頭只留代號（「BC 買權多單」→「BC」）；圖例仍用全名
+  addRow("th", ["日期", "盤態", ...colsAll.map(c => c.label.split(" ")[0])]);
+  for (let i = hi - 1; i >= lo; i--) {
+    const day = data.days[i];
+    addRow("td", [day.date, data.labels[day.key].label,
+      ...colsAll.map(c => (C.series[c.key][i] == null ? "—" : c.fmt(C.series[c.key][i])))]);
+  }
+  const tb = el("rg-table");
+  tb.textContent = "";
+  tb.appendChild(tbl);
+}
+
+/* 盤態辨識：當前盤態（徽章＋依據）與自起始日起 65 個交易日的盤態方格 */
+function renderRegime(data) {
+  if (OV.regime !== data) ovSet("regime", data);
+  if (el("regime-card").classList.contains("tab-off")) regimeSizedWhileHidden = true;
+  el("regime-card").style.display = "";
+  const L = data.labels, c = data.current;
+  const badge = el("rg-badge");
+  badge.textContent = `${c.emoji} ${c.label}` + (c.phase ? `・${c.phase}` : "");
+  badge.className = "rg-badge rg-" + c.key;
+  el("rg-title").textContent = `${data.date}｜連續第 ${c.streak} 個交易日`;
+  el("rg-reasons").textContent = (c.reasons || []).join("；");
+  el("rg-hint").textContent = c.hint || "—";
+  const chips = c.chips || { numbers: [], signals: [] };
+  el("rg-numbers").textContent = (chips.numbers || []).join("\n");
+  const sigBox = el("rg-signals");
+  sigBox.textContent = "";
+  for (const sg of chips.signals || []) {
+    const row = document.createElement("div");
+    row.className = "rg-sig" + (sg.new ? " new" : "");
+    row.textContent = `${sg.emoji} ${sg.text}`;
+    if (sg.new) {
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = "新";
+      row.appendChild(tag);
+    }
+    sigBox.appendChild(row);
+  }
+  if (!(chips.signals || []).length) sigBox.textContent = "今日無訊號";
+
+  const remBox = el("rg-reminders");
+  remBox.textContent = "";
+  for (const rm of chips.reminders || []) {
+    const div = document.createElement("div");
+    div.className = "rg-rem" + (rm.alert ? " alert" : "");
+    const src = document.createElement("div");
+    src.className = "src";
+    src.textContent = `${rm.date}｜${rm.source}`;
+    const body = document.createElement("div");
+    body.className = "body";
+    body.textContent = rm.text;
+    div.append(src, body);
+    for (const line of [rm.progress, rm.levels]) {
+      if (!line) continue;
+      const p = document.createElement("div");
+      p.className = "prog";
+      p.textContent = line.replace(/——/g, "\n").replace(/；/g, "\n");
+      div.appendChild(p);
+    }
+    remBox.appendChild(div);
+  }
+  if (!(chips.reminders || []).length) remBox.textContent = "—";
+
+  // 方格窗口：自 picker 起始日起 65 個交易日（13×5），預設最近 65 天；規則同溫度計
+  const rgFrom = el("rg-cal-from");
+  rgFrom.min = data.days[0].date;
+  rgFrom.max = data.days[data.days.length - 1].date;
+  if (!rgFrom.value || rgFrom.value < rgFrom.min || rgFrom.value > rgFrom.max) {
+    rgFrom.value = data.days[Math.max(0, data.days.length - 65)].date;
+  }
+  function drawRegimeGrid() {
+    let start = data.days.findIndex(e => e.date >= rgFrom.value);
+    // 起始日之後不足 65 個交易日時，自動往前移補滿 65 格，並把 picker 改成實際起始日
+    if (start < 0 || start > data.days.length - 65) start = Math.max(0, data.days.length - 65);
+    if (rgFrom.value !== data.days[start].date) rgFrom.value = data.days[start].date;
+    const w = data.days.slice(start, start + 65);
+    el("rg-cal-hint").textContent = `${w[0].date} ～ ${w[w.length - 1].date}（${w.length} 個交易日）`;
+    renderChipCharts(data, start, start + w.length);
+
+    const grid = el("rg-grid");
+    grid.textContent = "";
+    for (const e of w) {
+      const cell = document.createElement("div");
+      cell.className = "rg-cell rg-" + e.key + (e.phase === "鈍化" ? " dull" : "") + (e.phase === "結算日" ? " settle" : "");
+      const full = L[e.key].label + (e.phase ? `・${e.phase}` : "");
+      cell.title = `${e.date} ${full}\n加權 ${e.twii.toLocaleString()}（${e.chg >= 0 ? "+" : ""}${e.chg}）`;
+      const d = document.createElement("div");
+      d.className = "d";
+      d.textContent = e.date.slice(5).replace("-", "/");
+      const k = document.createElement("div");
+      k.className = "k";
+      k.textContent = e.phase ? `${L[e.key].label}·${e.phase.slice(0, 2)}` : L[e.key].label;
+      cell.append(d, k);
+      grid.appendChild(cell);
+    }
+  }
+  rgFrom.onchange = drawRegimeGrid;  // 用指派：重渲染時覆蓋、不殘留舊閉包
+  drawRegimeGrid();
+
+  const lg = el("rg-legend");
+  lg.textContent = "";
+  for (const [key, v] of Object.entries(L)) {
+    const s = document.createElement("span");
+    const i = document.createElement("i");
+    i.className = "rg-" + key;
+    s.append(i, document.createTextNode(`${v.emoji} ${v.label}`));
+    lg.appendChild(s);
+  }
+}
+
+/* 市場動能量表：docs/data/momentum.json（chipwatch/momentum.py 產生） */
+const MO_STATE = {
+  ignition: "動能起點", confirmed: "起點確認", warn: "減碼警示", overheat: "過熱",
+  strong: "擴張", neutral: "中性", weak: "枯竭",
+};
+const MO_HEAT = { hot: "過熱", warm: "偏熱", normal: "未過熱" };
+function moPartRows(box, labels, parts, weights, cls) {
+  box.textContent = "";
+  for (const [k, label] of Object.entries(labels)) {
+    const row = document.createElement("div");
+    row.className = "mo-part" + (cls ? " " + cls : "");
+    const name = document.createElement("span");
+    name.textContent = label;
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    const fill = document.createElement("i");
+    fill.style.width = `${Math.max(0, Math.min(100, parts[k]))}%`;
+    bar.appendChild(fill);
+    const v = document.createElement("span");
+    v.className = "v";
+    v.textContent = Math.round(parts[k]);
+    const w = document.createElement("span");
+    w.className = "w";
+    w.textContent = `×${weights[k]}`;
+    row.append(name, bar, v, w);
+    box.appendChild(row);
+  }
+}
+function renderMomentum(mo) {
+  ovSet("momentum", mo);
+  el("momentum-card").style.display = "";
+  el("mo-score").textContent = Math.round(mo.score);
+  const st = el("mo-state");
+  st.textContent = MO_STATE[mo.state] || mo.state;
+  st.className = "mo-badge " + mo.state;
+  el("mo-date").textContent = mo.date;
+  el("mo-dot").style.left = `calc(${Math.max(0, Math.min(100, mo.score))}% - 6px)`;
+
+  moPartRows(el("mo-parts"), mo.labels, mo.parts, mo.weights);
+  const hasHeat = mo.heat != null;
+  const hb = el("mo-heat");
+  hb.style.display = hasHeat ? "" : "none";
+  if (hasHeat) {
+    hb.textContent = `過熱側 ${Math.round(mo.heat)}・${MO_HEAT[mo.heat_level]}`;
+    hb.className = "mo-badge heat-" + mo.heat_level;
+    moPartRows(el("mo-heat-parts"), mo.heat_labels, mo.heat_parts, mo.heat_weights, "heat");
+  }
+
+  const f = mo.flags, r = mo.raw;
+  const yn = b => (b ? "✓" : "✗");
+  const lines = [
+    `<b>起點</b>　洗盤前置 ${yn(f.washout)}｜爆發（三選二）：廣度 ≥0.72 ${yn(f.burst_hits[0])}、漲停家數創 20 日新高 ${yn(f.burst_hits[1])}、量 ≥1.2× 20 日均 ${yn(f.burst_hits[2])}`,
+    `<b>警示</b>　指數在 60 日高附近 ${yn(f.index_near_high)}｜退潮（四選二）：連 ${mo.zero_streak} 日無觀察類股 ${yn(f.fade_hits[0])}、漲停 5 日均偏低 ${yn(f.fade_hits[1])}、10 日均額 <0.85× 60 日 ${yn(f.fade_hits[2])}、廣度 5 日均 <0.5 ${yn(f.fade_hits[3])}`,
+    ...(hasHeat ? [`<b>過熱</b>　加權距季線 ${mo.heat_raw.bias60 > 0 ? "+" : ""}${mo.heat_raw.bias60}%｜融資 20 日 ${mo.heat_raw.margin_chg20 > 0 ? "+" : ""}${mo.heat_raw.margin_chg20}%｜微台散戶淨多比（5 日中位）${mo.heat_raw.retail == null ? "–" : mo.heat_raw.retail + "%"}｜漲停 5 日均／20 日高 ${mo.heat_raw.limit_rel}`] : []),
+    `<b>今日</b>　觀察 ${r.watch ?? "–"}／稍微 ${r.slight ?? "–"}｜上漲比 ${r.ratio == null ? "–" : r.ratio.toFixed(2)}｜漲停 ${r.limit_up ?? "–"}／跌停 ${r.limit_down ?? "–"}｜量能比 ${r.vol_ratio}｜融資 5 日 ${r.margin_chg5 > 0 ? "+" : ""}${r.margin_chg5}%`,
+  ];
+  el("mo-flags").innerHTML = lines.join("<br>");
+
+  const ev = el("mo-events");
+  ev.textContent = "";
+  for (const e of (mo.events || []).slice(-12)) {
+    const s = document.createElement("span");
+    s.className = e.state;
+    s.textContent = `${e.date.slice(5)}${e.days > 1 ? "～" + e.end.slice(5) : ""} ${MO_STATE[e.state]}`;
+    ev.appendChild(s);
+  }
+
+  const rows = (mo.series || []).slice(-120).map(s => [s[0], s[1]]);
+  renderLineChart(el("mo-chart"), rows, {
+    color: "var(--accent)", smooth: true, yMin: 0, yMax: 100,
+    bands: [{ from: 65, to: 100, fill: "var(--good-wash)" }, { from: 0, to: 35, fill: "var(--hot-wash)" }],
+    tickFmt: v => Math.round(v), valueFmt: v => v.toFixed(1) + " 分",
+  });
+
+  if (hasHeat) {
+    renderLineChart(el("mo-heat-chart"), (mo.series || []).slice(-120).map(s => [s[0], s[3]]), {
+      color: "#9a6bff", smooth: true, yMin: 0, yMax: 100,
+      bands: [{ from: 65, to: 100, fill: "rgba(169, 112, 255, 0.22)" }, { from: 50, to: 65, fill: "rgba(169, 112, 255, 0.10)" }],
+      tickFmt: v => Math.round(v), valueFmt: v => v.toFixed(1) + " 分",
+    });
+  }
+
+  const box = el("mo-picks");
+  box.textContent = "";
+  if (!(mo.picks || []).length) {
+    box.textContent = "尚無盯盤排序結果（存名單後會自動產生）。";
+    return;
+  }
+  const marketWeak = ["warn", "weak"].includes(mo.state);
+  const marketHot = mo.heat_level === "hot";
+  const table = document.createElement("table");
+  table.className = "mo-picks";
+  table.innerHTML = "<thead><tr><th>個股</th><th>族群</th><th>相對大盤</th><th>20日乖離</th><th>5日</th><th>提示</th></tr></thead>";
+  const tb = document.createElement("tbody");
+  for (const p of mo.picks) {
+    const tr = document.createElement("tr");
+    const diverge = marketWeak && p.rs > 5;
+    const cells = [`${p.code} ${p.name}`, p.group, `${p.rs > 0 ? "+" : ""}${p.rs.toFixed(1)}%`,
+      `${p.bias20 > 0 ? "+" : ""}${p.bias20.toFixed(1)}%`, `${p.chg5 > 0 ? "+" : ""}${p.chg5.toFixed(1)}%`,
+      diverge ? "個股強・市場弱" : (p.bias20 >= 15 ? (marketHot ? "偏熱・市場過熱" : "偏熱") : "")];
+    cells.forEach((c, i) => {
+      const td = document.createElement("td");
+      td.textContent = c;
+      if (i === 5 && diverge) td.className = "diverge";
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  }
+  table.appendChild(tb);
+  box.appendChild(table);
 }
 
 /* 本機輸入欄位：偵測到 serve.py 的 API 才顯示（公開站自動隱藏） */
@@ -1274,6 +2077,8 @@ async function initWatchlistForm() {
     if (!r.ok) return;
   } catch { return; }
   el("watchlist-card").style.display = "";
+  showTab("watchlist");
+  showTab("nav");
   initHoldForm();
   const form = el("wl-form");
   form.style.display = "";
@@ -1516,6 +2321,7 @@ function renderTable(latest) {
 }
 
 async function init() {
+  initTabs();
   let latest, series, signals;
   try {
     [latest, series, signals] = await Promise.all([
@@ -1530,6 +2336,7 @@ async function init() {
     return;
   }
   latestData = latest;
+  ovSet("latest", latest);
   seriesData = series;
 
   el("as-of").textContent = "資料日 " + latest.date;
@@ -1561,6 +2368,7 @@ async function init() {
   // 建議持股水位（本機產生的 data/position.json；不存在則隱藏區塊）
   fetch("data/position.json").then(r => r.ok ? r.json() : null).catch(() => null).then(pos => {
     if (!pos || !pos.latest) return;
+    ovSet("position", pos);
     const L = pos.latest;
     el("position-card").style.display = "";
     el("pos-score").textContent = L.score + "%";
@@ -1649,8 +2457,14 @@ async function init() {
   });
 
   // 觀察類股溫度計（本機 watchlist.py 產生；不存在則隱藏區塊）
+  fetch("data/regime.json").then(r => r.ok ? r.json() : null).catch(() => null).then(rg => {
+    if (rg && rg.days && rg.days.length) renderRegime(rg);
+  });
   fetch("data/watchlist.json").then(r => r.ok ? r.json() : null).catch(() => null).then(wl => {
     if (wl && wl.days && wl.days.length) renderWatchlist(wl);
+  });
+  fetch("data/momentum.json").then(r => r.ok ? r.json() : null).catch(() => null).then(mo => {
+    if (mo && mo.series && mo.series.length) renderMomentum(mo);
   });
   initWatchlistForm();
 

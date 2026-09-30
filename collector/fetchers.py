@@ -86,6 +86,36 @@ def fetch_breadth(date_yyyymmdd):
     return parse_breadth(payload)
 
 
+def parse_breadth_counts(payload):
+    """回傳 (date, 上漲, 下跌, 漲停, 跌停)，股票欄；市場動能量表用。"""
+    date = payload["date"]
+    iso = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    counts = {}
+    for table in payload["tables"]:
+        if table.get("title") == "漲跌證券數合計":
+            for row in table["data"]:
+                cell = row[2]
+                n = int(_num(cell.split("(")[0]))
+                lim = int(_num(cell.split("(")[1].rstrip(")"))) if "(" in cell else 0
+                if row[0].startswith("上漲"):
+                    counts["up"], counts["limit_up"] = n, lim
+                elif row[0].startswith("下跌"):
+                    counts["down"], counts["limit_down"] = n, lim
+    if "up" not in counts or "down" not in counts:
+        raise ValueError("漲跌證券數合計 table not found")
+    return iso, counts["up"], counts["down"], counts["limit_up"], counts["limit_down"]
+
+
+def fetch_breadth_counts(date_yyyymmdd):
+    payload = _get_json(
+        f"{TWSE}/afterTrading/MI_INDEX",
+        {"date": date_yyyymmdd, "type": "MS", "response": "json"},
+    )
+    if payload.get("stat") != "OK":
+        return None
+    return parse_breadth_counts(payload)
+
+
 # ---- 加權指數收盤價（TWSE 每月市場成交資訊） ----
 
 def parse_taiex_closes(payload):
@@ -171,6 +201,26 @@ def parse_tpex_highlight(payload):
     table = payload["tables"][0]
     row = dict(zip(table["fields"], table["data"][0]))
     return iso, _num(row["收市指數"]), _num(row["本日總成交值(佰萬元)"])
+
+
+def parse_tpex_counts(payload):
+    """TPEX highlight → (iso_date, 上漲, 下跌, 漲停, 跌停) 家數。"""
+    date = payload["date"]
+    iso = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    table = payload["tables"][0]
+    row = dict(zip(table["fields"], table["data"][0]))
+    return iso, *(int(_num(row[k])) for k in ("上漲家數", "下跌家數", "漲停家數", "跌停家數"))
+
+
+def fetch_tpex_counts(date_slash):
+    payload = _get_json(
+        "https://www.tpex.org.tw/www/zh-tw/afterTrading/highlight",
+        {"date": date_slash, "response": "json"},
+    )
+    tables = payload.get("tables") or [{}]
+    if not tables[0].get("data"):
+        return None
+    return parse_tpex_counts(payload)
 
 
 def fetch_tpex_highlight(date_slash):
