@@ -1,3 +1,4 @@
+import colorsys
 import re
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def test_holding_row_uses_centered_identity_and_stacked_detail_rows():
 
 def test_navigation_and_watchlist_are_the_first_two_dashboard_cards():
     source = HTML.read_text()
-    body = source[source.index("<body>"):source.index("<script>")]
+    body = source[source.index("<body>"):source.index("<script>", source.index("<body>"))]
 
     assert body.count('id="mode-card"') == 1
     assert body.count('id="watchlist-card"') == 1
@@ -134,7 +135,7 @@ def test_momentum_card_shows_an_independent_overheat_side():
 
     assert 'id="mo-heat"' in card and 'id="mo-heat-parts"' in card and 'id="mo-heat-chart"' in card
     assert "mo.heat_level" in source
-    assert "#9a6bff" in _rule(source, ".mo-badge.heat-hot")
+    assert "var(--heat)" in _rule(source, ".mo-badge.heat-hot")   # 過熱側用獨立的紫色
 
 
 
@@ -143,7 +144,7 @@ TABS = ("overview", "nav", "regime", "momentum", "watchlist", "analysis", "libra
 
 def _body():
     source = HTML.read_text()
-    return source[source.index("<body>"):source.index("<script>")]
+    return source[source.index("<body>"):source.index("<script>", source.index("<body>"))]
 
 
 def test_every_big_block_is_its_own_tab_with_an_overview_first():
@@ -229,3 +230,116 @@ def test_library_renders_transcripts_with_audio_players_and_clickable_timestamps
     assert "<audio" in lib and "lib-ts" in lib
     assert "currentTime" in lib
     assert "a.file" in lib  # 逐字稿檔名不是 article.md
+
+
+def test_qa_transcripts_have_edit_buttons_and_a_settings_panel_backed_by_the_local_api():
+    source = HTML.read_text()
+
+    assert 'qaApi("api/qa/edit"' in source and 'qaApi("api/qa/config"' in source and "api/qa?folder=" in source
+    assert "lib-edit-btn" in source and "lib-settings" in source and "data-key" in source
+    assert "lib-edited" in source   # 編輯框靠它決定是否顯示「還原」
+    assert ".lib-edited" not in source[source.index("<style>"):source.index("</style>")]   # 修改過的段落外觀與一般段落相同
+    assert "orphaned_edits" in source  # 對不上的手動修改要提示
+
+
+def test_qa_editing_tells_the_user_why_when_the_api_is_unavailable():
+    source = HTML.read_text()
+    fn = source[source.index("async function initQaEditing("):source.index("function editParagraph(")]
+
+    assert "r.status === 404" in fn and "請重新啟動" in fn   # 舊版伺服器不能再靜默隱藏按鈕
+    assert "lib-warn" in fn
+
+
+def test_qa_edit_button_stays_dim_instead_of_lighting_up():
+    source = HTML.read_text()
+    style = source[source.index("<style>"):source.index("</style>")]
+
+    assert "opacity: 0.35" in _rule(source, "#lib-article .lib-line .lib-edit-btn")
+    assert not re.search(r"lib-edit-btn:(hover|focus)|:hover \.lib-edit-btn", style)
+    assert not re.search(r"\(hover: none\)[^}]*lib-edit-btn", style)
+
+
+THEMES = {"light": "明亮", "paper": "紙本", "celadon": "青瓷", "dark": "深色", "night": "夜讀"}
+
+
+def _theme_tokens(source, theme):
+    block = re.search(r':root\[data-theme="' + theme + r'"\]\s*\{([^}]+)\}', source)
+    assert block, f"missing theme block: {theme}"
+    return dict(re.findall(r"(--[\w-]+|color-scheme):\s*([^;]+);", block.group(1)))
+
+
+def _luminance(hex_color):
+    rgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def _contrast(a, b):
+    hi, lo = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def test_header_has_a_theme_picker_that_is_applied_before_first_paint():
+    source = HTML.read_text()
+    head = source[:source.index("<body>")]
+    header = source[source.index("<header>"):source.index("</header>")]
+
+    assert 'id="theme-select"' in header
+    assert re.findall(r'<option value="(\w+)"', header) == ["auto", *THEMES]
+    assert all(name in header for name in ["跟隨系統", *THEMES.values()])
+    assert "<script>" in head and "dataset.theme" in head and '"dashboard-theme"' in head   # 繪製前套用，避免先閃預設色
+    assert "prefers-color-scheme: dark" in head   # auto 跟隨系統明暗
+
+
+def test_every_theme_defines_the_same_complete_token_set():
+    source = HTML.read_text()
+    tokens = {theme: _theme_tokens(source, theme) for theme in THEMES}
+    expected = set(tokens["light"])
+
+    assert {"--on-fill", "--card-top", "--heat", "--heat-wash", "color-scheme"} <= expected
+    for theme, values in tokens.items():
+        assert set(values) == expected, theme
+        assert values["color-scheme"] == ("dark" if theme in ("dark", "night") else "light")
+
+
+def test_every_theme_keeps_text_readable():
+    source = HTML.read_text()
+    for theme in THEMES:
+        t = _theme_tokens(source, theme)
+        for bg in (t["--surface-1"], t["--page"]):
+            assert _contrast(t["--text-primary"], bg) >= 12, theme
+            assert _contrast(t["--text-secondary"], bg) >= 7, theme
+            assert _contrast(t["--text-muted"], bg) >= 4.5, theme   # 頂欄日期、頁尾直接在 page 上
+        for ink in ("--accent", "--hot", "--good", "--warn", "--heat"):   # 色字都在卡片內
+            assert _contrast(t[ink], t["--surface-1"]) >= 4.5, (theme, ink)
+        for fill in ("--accent", "--hot", "--good", "--heat"):
+            assert _contrast(t["--on-fill"], t[fill]) >= 4.5, (theme, fill)
+
+
+def test_colored_fills_use_the_theme_on_fill_color_instead_of_hard_coded_white():
+    source = HTML.read_text()
+    style = source[source.index("<style>"):source.index("</style>")]
+
+    assert not re.search(r"color:\s*(#fff\b|#ffffff\b|rgba\(255,\s*255,\s*255)", style)
+    assert "#9a6bff" not in source   # 過熱紫改用 --heat，隨主題調整
+    assert "@media (prefers-color-scheme" not in style   # 明暗由 data-theme 決定，auto 也解析成 light/dark
+
+
+def test_qa_editing_is_attached_from_one_place_so_buttons_are_never_doubled():
+    source = HTML.read_text()
+    load = source[source.index("async function loadLibraryArticle("):source.index("function renderLibraryArticle(")]
+
+    assert source.count("initQaEditing(") == 2   # 定義＋唯一呼叫點（ping 晚到時另行補掛會與這裡重複）
+    assert "await LIB.api" in load
+
+
+def test_accent_is_blue_or_teal_and_its_wash_is_the_same_hue():
+    source = HTML.read_text()
+    for theme in THEMES:
+        t = _theme_tokens(source, theme)
+        rgb = tuple(int(t["--accent"][i:i + 2], 16) for i in (1, 3, 5))
+        hue = colorsys.rgb_to_hls(*(c / 255 for c in rgb))[0] * 360
+
+        assert 180 <= hue <= 215, (theme, t["--accent"], hue)   # 藍／青色系，不用紫
+        assert t["--cold"] == t["--accent"], theme
+        assert t["--cold-wash"].startswith("rgba(%d,%d,%d," % rgb), theme

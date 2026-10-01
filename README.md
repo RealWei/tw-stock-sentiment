@@ -42,6 +42,7 @@
 - **GitHub Actions**（`.github/workflows/daily.yml`）：週一至五台北 22:30 自動執行 `collector/collect_daily.py`，抓當日資料、更新 `data/history.csv` 與 `docs/data/*.json` 後 commit。
 - **GitHub Pages**：儀表板網頁在 `docs/`，Pages 指向 main branch `/docs` 目錄。
 - **Telegram 通知**：總分跨入/離開過熱・過冷區間時推播；資料連續 2 天抓取失敗也會警示。
+- **配色**：頂欄右上可切換「跟隨系統／明亮／紙本／青瓷／深色／夜讀」，選擇記在瀏覽器（localStorage）。各主題的文字對比都達 WCAG AA，圖表兩色通過色盲辨識檢查；新增顏色請在 `docs/index.html` 每個 `:root[data-theme=…]` 區塊都補上同名 token（測試會檢查）。
 
 ## 初次設定
 

@@ -5,54 +5,161 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>台股情緒儀表板</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<script>
+/* 主題在繪製前套用（避免先閃預設色）；auto＝跟隨系統明暗，系統切換時即時跟著變 */
+const DARK_MQ = matchMedia("(prefers-color-scheme: dark)");
+function savedTheme() {
+  try { return localStorage.getItem("dashboard-theme") || "auto"; } catch { return "auto"; }
+}
+function applyTheme(choice) {
+  document.documentElement.dataset.theme = choice === "auto" ? (DARK_MQ.matches ? "dark" : "light") : choice;
+}
+applyTheme(savedTheme());
+DARK_MQ.addEventListener("change", () => { if (savedTheme() === "auto") applyTheme("auto"); });
+</script>
 <style>
-:root {
+/* 主題：每套定義完整 token；<head> 的 script 在繪製前把 data-theme 設成選定主題（auto 依系統明暗解析成 light／dark）。
+   文字對 surface／page 皆達 WCAG AA（主文字 ≥12、次文字 ≥7、灰字與色字 ≥4.5），--on-fill 是色塊上的字色；
+   --accent／--series-2 成對通過 dataviz 色盲驗證。 */
+:root, :root[data-theme="light"] {   /* 明亮 */
+  color-scheme: light;
   --surface-1: #ffffff;
   --page: #f6f8fb;
   --text-primary: #0a2540;   /* Stripe navy */
   --text-secondary: #425466;
-  --text-muted: #8792a2;
+  --text-muted: #5f6e83;
   --grid: #e9edf3;
   --baseline: #cdd6e0;
   --border: rgba(10,37,64,0.10);
+  --card-top: rgba(10,37,64,0.10);   /* 卡片頂緣（暗色主題調亮＝受光） */
   --shadow: 0 1px 3px rgba(16,24,40,0.07), 0 1px 2px rgba(16,24,40,0.04);
-  --accent: #635BFF;       /* series-1 藍紫（palette 驗證通過） */
-  --series-2: #eb6834;     /* series-2 橘（與 series-1 成對驗證通過；暗色另選一階） */
+  --accent: #2570af;       /* series-1 藍 */
+  --series-2: #eb6834;     /* series-2 橘 */
   --hot: #DF1B41;          /* diverging 暖極：過熱 */
-  --cold: #635BFF;         /* diverging 冷極：過冷 */
+  --cold: #2570af;         /* diverging 冷極：過冷 */
   --mid: #eef1f6;          /* diverging 中性 */
   --hot-wash: rgba(223,27,65,0.07);
-  --cold-wash: rgba(99,91,255,0.08);
+  --cold-wash: rgba(37,112,175,0.08);
   --good-wash: rgba(33,122,70,0.12);   /* status 綠：有觀察類股 */
   --good: #1a7f4b;                     /* status 綠（文字級對比） */
   --warn: #a85d00;                     /* 提醒橘：無觀察／掛零文字 */
+  --heat: #8250df;                     /* 過熱側紫 */
+  --heat-wash: rgba(130,80,223,0.16);
+  --on-fill: #ffffff;
   --tooltip-bg: rgba(255,255,255,0.78);
   --chrome: rgba(246,248,251,0.72);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --surface-1: #151821;
-    --page: #0b0d12;
-    --text-primary: #f0f2f7;
-    --text-secondary: #a3acbd;
-    --text-muted: #717a8c;
-    --grid: #232837;
-    --baseline: #37405a;
-    --border: rgba(240,242,247,0.09);
-    --shadow: 0 1px 3px rgba(0,0,0,0.35);
-    --accent: #7A73FF;
-    --series-2: #d95926;
-    --hot: #F2555A;
-    --cold: #7A73FF;
-    --mid: #262b3a;
-    --hot-wash: rgba(242,85,90,0.11);
-    --cold-wash: rgba(122,115,255,0.13);
-    --good-wash: rgba(62,207,119,0.16);
-    --good: #45b877;
-    --warn: #f0a64a;
-    --tooltip-bg: rgba(28,33,48,0.78);
-    --chrome: rgba(11,13,18,0.72);
-  }
+:root[data-theme="paper"] {   /* 紙本：米黃紙色、深褐字，長文閱讀不刺眼 */
+  color-scheme: light;
+  --surface-1: #fbf7ee;
+  --page: #f2e9d8;
+  --text-primary: #2f2619;
+  --text-secondary: #574836;
+  --text-muted: #73614d;
+  --grid: #e9dfcb;
+  --baseline: #cbb999;
+  --border: rgba(47,38,25,0.13);
+  --card-top: rgba(47,38,25,0.13);
+  --shadow: 0 1px 3px rgba(60,40,10,0.08), 0 1px 2px rgba(60,40,10,0.05);
+  --accent: #1e6aa8;
+  --series-2: #b85420;
+  --hot: #bf2a3a;
+  --cold: #1e6aa8;
+  --mid: #efe6d4;
+  --hot-wash: rgba(191,42,58,0.08);
+  --cold-wash: rgba(30,106,168,0.09);
+  --good-wash: rgba(43,116,68,0.13);
+  --good: #2b7444;
+  --warn: #8f5300;
+  --heat: #7a45c4;
+  --heat-wash: rgba(122,69,196,0.15);
+  --on-fill: #ffffff;
+  --tooltip-bg: rgba(251,247,238,0.88);
+  --chrome: rgba(242,233,216,0.78);
+}
+:root[data-theme="celadon"] {   /* 青瓷：淡灰綠底，降低白底眩光 */
+  color-scheme: light;
+  --surface-1: #f3f7f1;
+  --page: #e5ece4;
+  --text-primary: #18271e;
+  --text-secondary: #3a4c41;
+  --text-muted: #56695d;
+  --grid: #dbe4da;
+  --baseline: #b5c4b6;
+  --border: rgba(24,39,30,0.12);
+  --card-top: rgba(24,39,30,0.12);
+  --shadow: 0 1px 3px rgba(20,40,28,0.08), 0 1px 2px rgba(20,40,28,0.05);
+  --accent: #1e6aa8;
+  --series-2: #b9581f;
+  --hot: #bd2b3b;
+  --cold: #1e6aa8;
+  --mid: #e2eadf;
+  --hot-wash: rgba(189,43,59,0.08);
+  --cold-wash: rgba(30,106,168,0.09);
+  --good-wash: rgba(31,115,64,0.13);
+  --good: #1f7340;
+  --warn: #8d5400;
+  --heat: #7546c0;
+  --heat-wash: rgba(117,70,192,0.15);
+  --on-fill: #ffffff;
+  --tooltip-bg: rgba(243,247,241,0.88);
+  --chrome: rgba(229,236,228,0.78);
+}
+:root[data-theme="dark"] {   /* 深色 */
+  color-scheme: dark;
+  --surface-1: #151821;
+  --page: #0b0d12;
+  --text-primary: #f0f2f7;
+  --text-secondary: #a3acbd;
+  --text-muted: #8b94a7;
+  --grid: #232837;
+  --baseline: #37405a;
+  --border: rgba(240,242,247,0.09);
+  --card-top: rgba(240,242,247,0.13);
+  --shadow: 0 1px 3px rgba(0,0,0,0.35);
+  --accent: #4d94d6;
+  --series-2: #d95926;
+  --hot: #F2555A;
+  --cold: #4d94d6;
+  --mid: #262b3a;
+  --hot-wash: rgba(242,85,90,0.11);
+  --cold-wash: rgba(77,148,214,0.13);
+  --good-wash: rgba(62,207,119,0.16);
+  --good: #45b877;
+  --warn: #f0a64a;
+  --heat: #a785ff;
+  --heat-wash: rgba(167,133,255,0.22);
+  --on-fill: #0b0d12;   /* 暗色的色塊偏亮，白字對比不足，改用深字 */
+  --tooltip-bg: rgba(28,33,48,0.78);
+  --chrome: rgba(11,13,18,0.72);
+}
+:root[data-theme="night"] {   /* 夜讀：暖褐深底、米色字，夜間比冷灰暗色柔和 */
+  color-scheme: dark;
+  --surface-1: #1e1a15;
+  --page: #14110d;
+  --text-primary: #ece2cf;
+  --text-secondary: #c2b49d;
+  --text-muted: #9e907a;
+  --grid: #2c2720;
+  --baseline: #4a4236;
+  --border: rgba(236,226,207,0.10);
+  --card-top: rgba(236,226,207,0.14);
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  --accent: #279fb6;
+  --series-2: #c86c30;
+  --hot: #f07065;
+  --cold: #279fb6;
+  --mid: #2a251e;
+  --hot-wash: rgba(240,112,101,0.12);
+  --cold-wash: rgba(39,159,182,0.13);
+  --good-wash: rgba(124,195,145,0.15);
+  --good: #7cc391;
+  --warn: #e8a957;
+  --heat: #a98bf0;
+  --heat-wash: rgba(169,139,240,0.2);
+  --on-fill: #14110d;
+  --tooltip-bg: rgba(36,31,25,0.85);
+  --chrome: rgba(20,17,13,0.75);
 }
 * { box-sizing: border-box; margin: 0; }
 body {
@@ -77,6 +184,10 @@ header {
   transition: box-shadow 240ms ease;
 }
 header.scrolled { box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.06); }
+#theme-select {
+  margin-left: auto; font: inherit; font-size: 12.5px; cursor: pointer;
+  color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px;
+}
 /* 分頁：每個大區塊一頁（頂層區塊以 data-tab 標記，JS 加 .tab-off 隱藏；區塊內容不搬動） */
 #tabs { flex: 1 0 100%; display: flex; gap: 4px; overflow-x: auto; padding: 2px 0 0; scrollbar-width: none; }
 #tabs::-webkit-scrollbar { display: none; }
@@ -86,7 +197,7 @@ header.scrolled { box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.06)
   transition: background-color 160ms ease, color 160ms ease;
 }
 #tabs button:hover { background: var(--mid); }
-#tabs button[aria-selected="true"] { color: #fff; background: var(--accent); }
+#tabs button[aria-selected="true"] { color: var(--on-fill); background: var(--accent); }
 #tabs button[hidden] { display: none; }
 .tab-off { display: none !important; }
 [data-tab] > .micro-label:first-child, .card[data-tab] > .micro-label:first-child { font-size: 13px; margin-bottom: 4px; }
@@ -186,7 +297,36 @@ header.scrolled { box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.06)
 #lib-article .lib-line { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 8px; margin: 0 0 10px; }
 #lib-article .lib-ts { font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--accent); background: var(--cold-wash);
   border: 0; border-radius: 6px; padding: 1px 6px; cursor: pointer; align-self: start; margin-top: 4px; }
-#lib-article .lib-ts:hover { background: var(--accent); color: #fff; }
+#lib-article .lib-ts:hover { background: var(--accent); color: var(--on-fill); }
+#lib-article .lib-line:has(.lib-edit-btn) { grid-template-columns: 58px minmax(0, 1fr) auto; }  /* 有編輯權限時右側多一欄給「修改」 */
+#lib-article .lib-line .lib-edit-btn { align-self: start; margin-top: 3px; font: inherit; font-size: 11.5px; cursor: pointer;
+  color: var(--text-muted); background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 1px 8px; opacity: 0.35; }
+#lib-article .lib-edit-area { grid-column: 2 / -1; width: 100%; font: inherit; font-size: 14.5px; line-height: 1.7; color: var(--text-primary);
+  background: var(--surface-1); border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; resize: vertical; }
+#lib-article .lib-edit-bar { grid-column: 2 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--text-muted); }
+#lib-article .lib-edit-bar button, .lib-settings button { font: inherit; font-size: 12.5px; cursor: pointer; color: var(--text-secondary);
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 7px; padding: 4px 12px; }
+#lib-article .lib-edit-bar button.primary { color: var(--on-fill); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+#lib-article .lib-settings-btn { font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--on-fill); background: var(--accent);
+  border: 0; border-radius: 8px; padding: 4px 14px; }
+#lib-article .lib-settings-btn:hover { filter: brightness(1.1); }
+#lib-article .lib-warn { font-size: 12.5px; color: var(--warn); background: var(--hot-wash); border-radius: 8px; padding: 8px 12px; margin: -6px 0 14px; }
+#lib-article .lib-ok { font-size: 12.5px; color: var(--good); margin: -6px 0 12px; }
+.lib-settings { border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px 16px; margin: 0 0 18px; background: var(--mid); font-size: 13px; line-height: 1.6; }
+.lib-settings h4 { font-size: 13px; font-weight: 650; color: var(--text-secondary); margin: 12px 0 6px; }
+.lib-settings h4:first-child { margin-top: 0; }
+.lib-settings details { margin-top: 10px; }
+.lib-settings summary { cursor: pointer; font-weight: 600; color: var(--text-secondary); }
+.lib-settings input, .lib-settings textarea { font: inherit; font-size: 13px; color: var(--text-primary); background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 7px; padding: 5px 8px; width: 100%; }
+.lib-settings textarea { resize: vertical; line-height: 1.6; }
+.lib-field { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 10px; align-items: start; margin: 6px 0; }
+.lib-field > span { padding-top: 6px; color: var(--text-secondary); }
+.lib-field > small { grid-column: 2; color: var(--text-muted); }
+.lib-fix-row { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr) 30px; gap: 6px; align-items: center; margin: 4px 0; }
+.lib-fix-row > span { text-align: center; color: var(--text-muted); }
+.lib-fix-row button { padding: 3px 0; }
+.lib-settings .lib-edit-bar { margin-top: 12px; }
 .kchart { width: 100%; height: auto; display: block; margin: 8px 0 4px; }
 .kchart .c line { stroke-width: 1; }
 .kchart .c.up line, .kchart .c.up rect { stroke: var(--hot); fill: var(--hot); }
@@ -203,12 +343,10 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border);
+  border-top-color: var(--card-top);
   border-radius: 14px;
   padding: 18px 20px;
   box-shadow: var(--shadow);
-}
-@media (prefers-color-scheme: dark) {
-  .card { border-top-color: rgba(240,242,247,0.13); }  /* 材質頂緣受光 */
 }
 .micro-label {
   font-size: 12px; font-weight: 600; color: var(--text-muted);
@@ -248,7 +386,7 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 #hold-form input::placeholder { color: var(--text-muted); }
 #hold-form button {
   font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-  color: #fff; background: var(--accent); border: 1px solid var(--accent);
+  color: var(--on-fill); background: var(--accent); border: 1px solid var(--accent);
   border-radius: 8px; padding: 6px 16px;
 }
 #hold-msg { font-size: 12px; color: var(--text-muted); }
@@ -327,7 +465,7 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 #wl-form input::placeholder { color: var(--text-muted); }
 #wl-form button {
   font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-  color: #fff; background: var(--accent); border: 1px solid var(--accent);
+  color: var(--on-fill); background: var(--accent); border: 1px solid var(--accent);
   border-radius: 8px; padding: 6px 16px;
 }
 #wl-form-msg { font-size: 12px; color: var(--text-muted); }
@@ -365,8 +503,8 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 .wl-cell.slight-only { background: var(--mid); }
 .wl-cell.slight-only .n { color: var(--text-secondary); }
 .wl-cell.zero { background: var(--hot); }
-.wl-cell.zero .n { color: #fff; }
-.wl-cell.zero .d, .wl-cell.zero .s { color: rgba(255,255,255,0.8); }
+.wl-cell.zero .n { color: var(--on-fill); }
+.wl-cell.zero .d, .wl-cell.zero .s { color: var(--on-fill); opacity: 0.8; }
 /* 盤態辨識：當前盤態徽章＋自起始日起 65 個交易日方格（13×5，先上到下再左至右，左上最舊） */
 .rg-now { display: flex; gap: 14px; align-items: flex-start; margin: 10px 0 12px; }
 .rg-badge { font-size: 21px; font-weight: 700; padding: 8px 14px; border-radius: 10px; white-space: nowrap; line-height: 1.2; }
@@ -384,7 +522,7 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 .rg-rem .src { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
 .rg-rem .body { font-size: 12.5px; line-height: 1.65; color: var(--text-secondary); }
 .rg-rem .prog { margin-top: 6px; font-size: 12px; line-height: 1.6; padding: 6px 9px; border-radius: 7px; background: var(--surface-1); white-space: pre-line; font-variant-numeric: tabular-nums; }
-.rg-rem.alert .prog { background: rgba(232, 161, 60, 0.22); color: #d08a2a; font-weight: 600; }
+.rg-rem.alert .prog { background: rgba(232, 161, 60, 0.22); color: var(--warn); font-weight: 600; }
 .rg-cell.dull { opacity: 0.62; }
 .rg-cell.settle { outline: 1px dashed var(--text-muted); outline-offset: -1px; }
 #rg-grid-wrap { overflow-x: auto; padding-bottom: 4px; }
@@ -418,7 +556,7 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 .cc-key { display: inline-block; width: 12px; height: 2px; border-radius: 1px; vertical-align: middle; margin-right: 4px; }
 .cc-legend b { color: var(--text-primary); font-weight: 650; margin-left: 4px; }
 .cc-badge { font-size: 11.5px; line-height: 1.5; color: var(--text-primary); margin-top: 3px; }
-.cc-badge span { display: inline-block; font-size: 10px; font-weight: 650; padding: 0 6px; border-radius: 999px; margin-right: 6px; background: var(--accent); color: #fff; }
+.cc-badge span { display: inline-block; font-size: 10px; font-weight: 650; padding: 0 6px; border-radius: 999px; margin-right: 6px; background: var(--accent); color: var(--on-fill); }
 .cc-panel svg { display: block; width: 100%; height: auto; margin-top: auto; outline: none; touch-action: pan-y; }
 .cc-panel svg:focus-visible { box-shadow: 0 0 0 2px var(--accent); border-radius: 6px; }
 #rg-table-wrap { margin: 8px 0 2px; font-size: 12px; color: var(--text-muted); }
@@ -429,29 +567,29 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 #rg-table th { position: sticky; top: 0; background: var(--surface-1); color: var(--text-secondary); font-weight: 600; }
 #rg-table td:first-child, #rg-table th:first-child { text-align: left; }
 #rg-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
-.rg-panic { background: var(--hot); color: #fff; }
-.rg-panic .d, .rg-panic .k { color: #fff; }
-.rg-overheat { background: rgba(169, 112, 255, 0.28); color: #9a6bff; }
-.rg-overheat .k { color: #9a6bff; }
-.rg-squeeze { background: rgba(255, 122, 69, 0.28); color: #e8703f; }
-.rg-squeeze .k { color: #e8703f; }
-.rg-strong { background: var(--good); color: #fff; }
-.rg-strong .d, .rg-strong .k { color: #fff; }
+.rg-panic { background: var(--hot); color: var(--on-fill); }
+.rg-panic .d, .rg-panic .k { color: var(--on-fill); }
+.rg-overheat { background: var(--heat-wash); color: var(--heat); }
+.rg-overheat .k { color: var(--heat); }
+.rg-squeeze { background: rgba(255, 122, 69, 0.28); color: var(--warn); }
+.rg-squeeze .k { color: var(--warn); }
+.rg-strong { background: var(--good); color: var(--on-fill); }
+.rg-strong .d, .rg-strong .k { color: var(--on-fill); }
 .rg-creep { background: var(--good-wash); }
 .rg-creep .k { color: var(--good); }
 /* 市場動能量表：總分＋六分項＋事件狀態 */
 .mo-head { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin: 8px 0 12px; }
 .mo-badge { display: inline-block; font-size: 13px; font-weight: 650; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
-.mo-badge.ignition, .mo-badge.confirmed { background: var(--good); color: #fff; }
-.mo-badge.warn { background: var(--hot); color: #fff; }
+.mo-badge.ignition, .mo-badge.confirmed { background: var(--good); color: var(--on-fill); }
+.mo-badge.warn { background: var(--hot); color: var(--on-fill); }
 .mo-badge.strong { background: var(--good-wash); color: var(--good); }
 .mo-badge.weak { background: var(--hot-wash); color: var(--hot); }
 .mo-badge.neutral { background: var(--mid); color: var(--text-secondary); }
-.mo-badge.heat-hot { background: #9a6bff; color: #fff; }
-.mo-badge.heat-warm { background: rgba(169, 112, 255, 0.28); color: #9a6bff; }
+.mo-badge.heat-hot { background: var(--heat); color: var(--on-fill); }
+.mo-badge.heat-warm { background: var(--heat-wash); color: var(--heat); }
 .mo-badge.heat-normal { background: var(--mid); color: var(--text-secondary); }
-.mo-part.heat .bar i { background: #9a6bff; }
-.mo-events span.overheat { background: rgba(169, 112, 255, 0.28); color: #9a6bff; }
+.mo-part.heat .bar i { background: var(--heat); }
+.mo-events span.overheat { background: var(--heat-wash); color: var(--heat); }
 .mo-part { display: grid; grid-template-columns: 64px minmax(120px, 1fr) 44px 40px; gap: 8px; align-items: center; font-size: 12.5px; padding: 3px 0; }
 .mo-part .bar { height: 8px; border-radius: 4px; background: var(--mid); overflow: hidden; }
 .mo-part .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
@@ -650,6 +788,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
 <header>
   <h1>台股情緒儀表板</h1>
   <span id="as-of"></span>
+  <select id="theme-select" aria-label="配色">
+    <option value="auto">跟隨系統</option>
+    <option value="light">明亮</option>
+    <option value="paper">紙本</option>
+    <option value="celadon">青瓷</option>
+    <option value="dark">深色</option>
+    <option value="night">夜讀</option>
+  </select>
   <nav id="tabs" role="tablist" aria-label="儀表板分頁">
     <button type="button" role="tab" data-tab-target="overview" aria-selected="true">總覽</button>
     <button type="button" role="tab" data-tab-target="nav" aria-selected="false" hidden>加減碼導航</button>
@@ -954,6 +1100,14 @@ function showTab(name) {
   let want = location.hash.slice(1).split("/")[0];
   if (!want) { try { want = localStorage.getItem("dashboard-tab"); } catch { /* 同上 */ } }
   if (want === name) activateTab(name, false);  // 資料晚到的分頁：補上使用者原本要看的那頁
+}
+function initTheme() {
+  const sel = el("theme-select");
+  sel.value = savedTheme();
+  sel.addEventListener("change", () => {
+    try { localStorage.setItem("dashboard-theme", sel.value); } catch { /* 隱私模式等情況略過 */ }
+    applyTheme(sel.value);
+  });
 }
 function initTabs() {
   for (const b of document.querySelectorAll("#tabs button")) {
@@ -2245,7 +2399,7 @@ function initAnalysis() {
 }
 
 /* 文章庫：docs/data/archive_index.json ＋ docs/data/archive/（→ 股市資料/ 的符號連結；chipwatch/archive_index.py） */
-const LIB = { index: null, project: null, folder: null };
+const LIB = { index: null, project: null, folder: null, api: Promise.resolve(false), qa: null };   // api：本機編輯 API 是否可用（ping 的 Promise）
 const libUrl = (folder, file) => "data/archive/" + folder.split("/").map(encodeURIComponent).join("/") + "/" + encodeURIComponent(file);
 function libItems() {
   const all = (LIB.index && LIB.index.projects[LIB.project]) || [];
@@ -2326,7 +2480,7 @@ function markdownToHtml(md, a) {
   let body = md.includes("## 內文") ? md.slice(md.indexOf("## 內文") + 5) : md;
   body = body.replace(/^# [^\n]*\n/, "");  // 標題已顯示在文章頂端
   const out = [];
-  let list = null;
+  let list = null, part = "", seen = new Set();
   const flush = () => { if (list) { out.push(`</${list}>`); list = null; } };
   for (const raw of body.split("\n")) {
     const line = raw.trim();
@@ -2339,13 +2493,18 @@ function markdownToHtml(md, a) {
       flush();
       const src = a.folder.split("/").map(encodeURIComponent).join("/") + "/" + audio[1].split("/").map(encodeURIComponent).join("/");
       out.push(`<audio class="lib-audio" controls preload="metadata" src="data/archive/${src}"></audio>`);
+      part = audio[1].split("/").pop().split("-")[0];  // 段落鍵＝"<部分>@<mm:ss>"，與 qa_transcript.py 一致
+      seen = new Set();
       continue;
     }
     if (ts) {
       flush();
       const secs = ts[3] != null ? (+ts[1]) * 3600 + (+ts[2]) * 60 + (+ts[3]) : (+ts[1]) * 60 + (+ts[2]);
       const label = ts[3] != null ? `${ts[1]}:${ts[2]}:${ts[3]}` : `${ts[1]}:${ts[2]}`;
-      out.push(`<p class="lib-line"><button type="button" class="lib-ts" data-t="${secs}" title="從這裡播放">${label}</button>${inline(ts[4])}</p>`);
+      let key = `${part}@${label}`;
+      for (let n = 2; seen.has(key); n++) key = `${part}@${label}#${n}`;
+      seen.add(key);
+      out.push(`<p class="lib-line" data-key="${key}"><button type="button" class="lib-ts" data-t="${secs}" title="從這裡播放">${label}</button><span class="lib-text">${inline(ts[4])}</span></p>`);
       continue;
     }
     if (/^### /.test(line)) { flush(); out.push(`<h4>${inline(line.slice(4))}</h4>`); continue; }
@@ -2392,6 +2551,7 @@ async function loadLibraryArticle(a, remember) {
   }
   renderLibraryArticle(a, html, md);
   if (remember) { el("library-card").scrollIntoView({ block: "start" }); window.scrollBy(0, -80); }
+  if (a.file === "逐字稿.md" && await LIB.api) initQaEditing(a);
 }
 function renderLibraryArticle(a, html, md) {
   const box = el("lib-article");
@@ -2408,6 +2568,192 @@ function renderLibraryArticle(a, html, md) {
   body.className = "lib-body";
   body.innerHTML = html != null ? sanitizeArticleHtml(html, a) : markdownToHtml(md, a);
   box.append(h2, meta, body);
+}
+/* QA 逐字稿編輯（本機 serve.py 才有 API）：單段修改＋逐字稿設定（字詞替換、標題、問題標記、門檻、提示詞） */
+async function qaApi(path, body) {
+  const r = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : undefined);
+  const js = await r.json();
+  if (!r.ok) throw new Error(js.error || "HTTP " + r.status);
+  return js;
+}
+async function reloadLibrary(a, keepKey) {
+  const idx = await fetch("data/archive_index.json").then(r => r.json());
+  LIB.index = idx;
+  renderLibraryTree();
+  const fresh = (idx.projects[LIB.project] || []).find(x => x.folder === a.folder) || a;
+  await loadLibraryArticle(fresh, false);
+  const p = keepKey && document.querySelector(`#lib-article .lib-line[data-key="${keepKey}"]`);
+  if (p) { p.scrollIntoView({ block: "center" }); p.classList.add("an-focus"); setTimeout(() => p.classList.remove("an-focus"), 1600); }
+}
+async function initQaEditing(a) {
+  const r = await fetch(`api/qa?folder=${encodeURIComponent(a.folder)}`).catch(() => null);
+  if (LIB.folder !== a.folder) return;  // 載入期間已切到別篇
+  if (!r || !r.ok) {
+    // 404＝伺服器是加入編輯 API 之前啟動的舊版；400＝這篇缺 transcript.json 等，不能編輯
+    const why = !r ? "連不到本機伺服器" : r.status === 404 ? "目前執行的 serve.py 是舊版，請重新啟動後再整理頁面"
+      : ((await r.json().catch(() => ({}))).error || "HTTP " + r.status);
+    const w = document.createElement("div");
+    w.className = "lib-warn";
+    w.textContent = `逐字稿的「修改」與「逐字稿設定」暫時無法使用：${why}。`;
+    el("lib-article").querySelector(".lib-meta").after(w);
+    return;
+  }
+  const qa = await r.json();
+  LIB.qa = { a, ...qa };
+  const box = el("lib-article"), edits = qa.doc.edits || {};
+  for (const p of box.querySelectorAll(".lib-line")) {
+    if (edits[p.dataset.key] != null) p.classList.add("lib-edited");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "lib-edit-btn";
+    b.textContent = "修改";
+    b.title = "修正這一段的錯字（存成手動修改，之後重建不會被覆蓋）";
+    b.addEventListener("click", () => editParagraph(p));
+    p.appendChild(b);
+  }
+  const meta = box.querySelector(".lib-meta");
+  const sb = document.createElement("button");
+  sb.type = "button";
+  sb.className = "lib-settings-btn";
+  sb.textContent = "⚙ 逐字稿設定";
+  sb.addEventListener("click", () => toggleQaSettings());
+  meta.appendChild(sb);
+  const nEdits = Object.keys(edits).length;
+  if (nEdits) { const s = document.createElement("span"); s.textContent = `${nEdits} 段手動修改`; meta.appendChild(s); }
+  const orphans = qa.report.orphaned_edits || [];
+  if (orphans.length) {
+    const w = document.createElement("div");
+    w.className = "lib-warn";
+    w.textContent = `有 ${orphans.length} 則手動修改對不上目前的段落（段落邊界在設定變更後移動了）：${orphans.join("、")}。內容仍保存在設定裡，可在「逐字稿設定」查看。`;
+    meta.after(w);
+  }
+}
+function editParagraph(p) {
+  if (p.querySelector("textarea")) return;
+  const key = p.dataset.key, edited = p.classList.contains("lib-edited");
+  const span = p.querySelector(".lib-text");
+  const ta = document.createElement("textarea");
+  ta.className = "lib-edit-area";
+  ta.value = span.textContent;
+  ta.rows = Math.max(3, Math.ceil(ta.value.length / 42));
+  const bar = document.createElement("div");
+  bar.className = "lib-edit-bar";
+  const mk = (label, cls, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.className = cls; b.addEventListener("click", fn); bar.appendChild(b); return b; };
+  const msg = document.createElement("span");
+  const save = async text => {
+    msg.textContent = "儲存中…";
+    try {
+      await qaApi("api/qa/edit", { folder: LIB.qa.a.folder, key, text });
+      await reloadLibrary(LIB.qa.a, key);
+    } catch (e) { msg.textContent = "儲存失敗：" + e.message; }
+  };
+  mk("儲存", "primary", () => save(ta.value));
+  mk("取消", "", () => { ta.remove(); bar.remove(); span.hidden = false; p.querySelector(".lib-edit-btn").hidden = false; });
+  if (edited) mk("還原自動轉錄", "", () => save(""));
+  bar.appendChild(msg);
+  span.hidden = true;
+  p.querySelector(".lib-edit-btn").hidden = true;
+  p.append(ta, bar);
+  ta.focus();
+}
+function toggleQaSettings() {
+  const box = el("lib-article");
+  const old = box.querySelector(".lib-settings");
+  if (old) { old.remove(); return; }
+  const { global: g, doc } = LIB.qa;
+  const parts = Object.keys(doc.sections).sort((x, y) => x - y);
+  const panel = document.createElement("section");
+  panel.className = "lib-settings";
+  const h = (tag, text, cls) => { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; };
+  const field = (label, input, note) => { const w = h("label", null, "lib-field"); w.append(h("span", label), input); if (note) w.append(h("small", note)); return w; };
+  const inp = (v, type = "text") => { const i = document.createElement("input"); i.type = type; i.value = v; return i; };
+  const area = (v, rows) => { const t = document.createElement("textarea"); t.value = v; t.rows = rows; return t; };
+
+  // 1. 字詞替換（全部 QA 共用）
+  panel.append(h("h4", "字詞替換（所有 QA 共用，由上往下依序套用）"));
+  const table = h("div", null, "lib-fixes");
+  const addRow = (w = "", r = "") => {
+    const row = h("div", null, "lib-fix-row");
+    const del = h("button", "✕"); del.type = "button"; del.title = "刪除"; del.addEventListener("click", () => row.remove());
+    row.append(inp(w), h("span", "→"), inp(r), del);
+    table.append(row);
+  };
+  for (const [w, r] of g.fixes) addRow(w, r);
+  const addBtn = h("button", "＋ 新增一列"); addBtn.type = "button"; addBtn.addEventListener("click", () => addRow());
+  panel.append(table, addBtn);
+
+  // 2. 本篇
+  panel.append(h("h4", "本篇"));
+  const title = inp(doc.title), published = inp(doc.published, "date"), source = inp(doc.source), note = inp(doc.note);
+  panel.append(field("標題", title), field("發布日", published), field("原文網址", source), field("說明", note));
+  const sectionInputs = {}, markerAreas = {};
+  for (const pt of parts) {
+    sectionInputs[pt] = inp(doc.sections[pt]);
+    markerAreas[pt] = area((doc.markers[pt] || []).map(([ts, hd]) => `${ts} ${hd}`).join("\n"), Math.min(14, (doc.markers[pt] || []).length + 1));
+    panel.append(field(`第 ${pt} 段名稱`, sectionInputs[pt]),
+      field(`第 ${pt} 段問題標記`, markerAreas[pt], "每行「mm:ss 標題」：該時間之後另起一段並加上小標"));
+  }
+
+  // 3. 版面與過濾（全部共用）
+  panel.append(h("h4", "段落與過濾（所有 QA 共用）"));
+  const paraChars = inp(g.para_chars, "number");
+  panel.append(field("段落字數", paraChars, "累積到這個字數就另起一段（時間戳跟著新段落）"));
+  const hl = g.hallucination, hin = {};
+  const HL_LABEL = { no_speech_prob: "無語音機率 >", avg_logprob: "且平均信心 <", compression_ratio: "壓縮比 >",
+    silent_no_speech_prob: "近乎無聲：無語音機率 >", silent_chars_per_sec: "且每秒字數 <" };
+  const hdet = document.createElement("details");
+  hdet.append(h("summary", "幻覺過濾門檻（進階）"));
+  for (const k of Object.keys(HL_LABEL)) { hin[k] = inp(hl[k], "number"); hin[k].step = "any"; hdet.append(field(HL_LABEL[k], hin[k])); }
+  hdet.append(h("small", "符合任一條件的片段會被丟掉（whisper 在靜音或重複時容易憑空產生文字）。"));
+  panel.append(hdet);
+
+  // 4. 轉錄提示詞（只影響下次轉錄）
+  const pdet = document.createElement("details");
+  pdet.append(h("summary", "轉錄提示詞（只影響下次重新轉錄，不影響目前內容）"));
+  const basePrompt = area(g.base_prompt, 4), termAreas = {};
+  pdet.append(field("基本提示詞（共用）", basePrompt));
+  for (const pt of parts) { termAreas[pt] = area(doc.prompt_terms[pt] || "", 2); pdet.append(field(`第 ${pt} 段專有名詞`, termAreas[pt])); }
+  panel.append(pdet);
+
+  const bar = h("div", null, "lib-edit-bar");
+  const msg = h("span");
+  const save = h("button", "儲存並重建", "primary"); save.type = "button";
+  const cancel = h("button", "取消"); cancel.type = "button"; cancel.addEventListener("click", () => panel.remove());
+  bar.append(save, cancel, msg);
+  panel.append(bar);
+  save.addEventListener("click", async () => {
+    const newGlobal = {
+      fixes: [...table.querySelectorAll(".lib-fix-row")].map(r => [...r.querySelectorAll("input")].map(i => i.value)).filter(([w]) => w !== ""),
+      para_chars: parseInt(paraChars.value, 10),
+      hallucination: Object.fromEntries(Object.entries(hin).map(([k, i]) => [k, parseFloat(i.value)])),
+      base_prompt: basePrompt.value,
+    };
+    const markers = {};
+    for (const pt of parts) {
+      markers[pt] = markerAreas[pt].value.split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+        const m = l.match(/^(\d{1,2}:\d{2})\s+(.+)$/);
+        if (!m) throw new Error(`第 ${pt} 段問題標記格式錯誤：「${l}」（應為 mm:ss 標題）`);
+        return [m[1], m[2]];
+      });
+    }
+    let body;
+    try {
+      body = { folder: LIB.qa.a.folder, doc: {
+        title: title.value, published: published.value, source: source.value, note: note.value,
+        sections: Object.fromEntries(parts.map(pt => [pt, sectionInputs[pt].value])), markers,
+        prompt_terms: Object.fromEntries(parts.map(pt => [pt, termAreas[pt].value])) } };
+    } catch (e) { msg.textContent = e.message; return; }
+    if (JSON.stringify(newGlobal) !== JSON.stringify(g)) body.global = newGlobal;
+    msg.textContent = "重建中…";
+    try {
+      const res = await qaApi("api/qa/config", body);
+      await reloadLibrary(LIB.qa.a);
+      const done = h("div", `已重建：${res.rebuilt.join("、")}`, "lib-ok");
+      el("lib-article").querySelector(".lib-meta").after(done);
+      setTimeout(() => done.remove(), 4000);
+    } catch (e) { msg.textContent = "未儲存：" + e.message; }
+  });
+  box.querySelector(".lib-meta").after(panel);
 }
 function selectLibraryProject(name, remember) {
   LIB.project = name;
@@ -2431,6 +2777,7 @@ function initLibrary() {
       wrap.appendChild(b);
     }
     el("lib-filter").addEventListener("input", renderLibraryTree);
+    LIB.api = fetch("api/ping").then(r => r.ok).catch(() => false);
     el("lib-article").addEventListener("click", ev => {
       const b = ev.target.closest(".lib-ts");
       if (b) playFrom(b);
@@ -2521,8 +2868,8 @@ function renderMomentum(mo) {
 
   if (hasHeat) {
     renderLineChart(el("mo-heat-chart"), (mo.series || []).slice(-120).map(s => [s[0], s[3]]), {
-      color: "#9a6bff", smooth: true, yMin: 0, yMax: 100,
-      bands: [{ from: 65, to: 100, fill: "rgba(169, 112, 255, 0.22)" }, { from: 50, to: 65, fill: "rgba(169, 112, 255, 0.10)" }],
+      color: "var(--heat)", smooth: true, yMin: 0, yMax: 100,
+      bands: [{ from: 65, to: 100, fill: "var(--heat-wash)" }, { from: 50, to: 65, fill: "color-mix(in srgb, var(--heat-wash) 45%, transparent)" }],
       tickFmt: v => Math.round(v), valueFmt: v => v.toFixed(1) + " 分",
     });
   }
@@ -2808,6 +3155,7 @@ function renderTable(latest) {
 }
 
 async function init() {
+  initTheme();
   initTabs();
   let latest, series, signals;
   try {
