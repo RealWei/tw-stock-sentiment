@@ -343,3 +343,41 @@ def test_accent_is_blue_or_teal_and_its_wash_is_the_same_hue():
         assert 180 <= hue <= 215, (theme, t["--accent"], hue)   # 藍／青色系，不用紫
         assert t["--cold"] == t["--accent"], theme
         assert t["--cold-wash"].startswith("rgba(%d,%d,%d," % rgb), theme
+
+
+def test_article_layouts_fit_phone_width_even_with_long_urls():
+    source = HTML.read_text()
+
+    narrow = source[source.index("@media (max-width: 860px) {"):]
+    narrow = narrow[:narrow.index("\n}\n")]
+
+    assert "grid-template-columns: minmax(0, 1fr)" in _rule(narrow, ".an-layout")   # 1fr 會被長網址撐到 760px
+    assert "overflow-wrap: anywhere" in _rule(source, "#lib-article .lib-body")
+    assert source.index("@media (max-width: 860px) {") > source.index("#lib-tree {")   # 要寫在列表基本樣式之後才蓋得過
+
+
+def test_article_lists_sit_above_the_text_on_narrow_screens_without_floating_over_it():
+    source = HTML.read_text()
+    narrow = source[source.index("@media (max-width: 860px) {"):]
+    narrow = narrow[:narrow.index("\n}\n")]
+    rule = _rule(narrow, "#an-tree, #lib-tree")
+    load = source[source.index("async function loadLibraryArticle("):source.index("function renderLibraryArticle(")]
+
+    assert "order: -1" in rule and "position: static" in rule   # sticky 列表會蓋住內文
+    assert 'scrollBelowHeader(el("lib-article"))' in load   # 選文章後捲到內文，不是列表
+    assert "scrollBy(0, -" not in source   # 頂欄高度隨螢幕寬度變，不寫死位移
+
+
+def test_transcript_text_uses_the_full_width_on_phones():
+    source = HTML.read_text()
+    phone = source[source.index("@media (max-width: 600px) {  /* 手機逐字稿"):]
+    phone = phone[:phone.index("\n}\n")]
+
+    assert "grid-row: 2" in phone and "grid-column: 1 / -1" in phone   # 時間碼與「修改」一列，內文在下一列用滿寬度
+
+
+def test_failure_point_dash_style_applies_to_the_line_not_its_label():
+    source = HTML.read_text()
+
+    assert "stroke-dasharray" in _rule(source, ".kchart line.anchor")
+    assert ".kchart .anchor {" not in source   # 會連標籤 <text class="lbl anchor"> 一起描上虛線外框
