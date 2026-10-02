@@ -10,6 +10,7 @@ chipwatch/
 docs/data/watchlist.json
 docs/data/momentum.json
 docs/data/holdings.json
+docs/data/live.json
 股市資料/
 data/backfill_breadth.progress.json
 docs/data/analysis/

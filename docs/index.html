@@ -244,7 +244,23 @@ header.scrolled { box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.06)
 #an-article .an-kv b { color: var(--text-primary); }
 #an-article ul { margin: 0; padding-left: 20px; }
 #an-article li { margin: 2px 0; }
-#an-article .an-stock { padding: 18px 0 20px; border-top: 1px solid var(--grid); }
+#an-article .an-stock { padding: 12px 0; border-top: 1px solid var(--grid); }
+#an-article .an-stock > summary { cursor: pointer; list-style: none; display: flex; gap: 8px; align-items: baseline; }
+#an-article .an-stock > summary::-webkit-details-marker { display: none; }
+#an-article .an-stock > summary::before { content: "▸"; color: var(--text-muted); font-size: 12px; }
+#an-article .an-stock[open] > summary::before { content: "▾"; }
+#an-article .an-stock > summary h3 { margin: 0; flex: 1; }
+#an-article .an-stock[open] > summary { margin-bottom: 8px; }
+#an-article h3 .tag { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); background: var(--mid); padding: 1px 7px; border-radius: 6px; }
+#an-article h3 .brief { font-size: 12.5px; font-weight: 400; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+#an-article .an-fail { font-size: 13px; color: var(--warn); margin: 0 0 6px; }
+.an-index { margin: 0 0 18px; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; align-items: start; font-size: 13px; }
+.an-index .k { color: var(--text-muted); font-weight: 600; padding-top: 3px; }
+.an-index .v { display: flex; flex-wrap: wrap; gap: 6px; }
+.an-index button { font: inherit; font-size: 12.5px; cursor: pointer; color: var(--text-primary); background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 7px; padding: 2px 9px; }
+.an-index button:hover { border-color: var(--accent); color: var(--accent); }
+.an-index button.fail { color: var(--text-muted); }
 #an-article .an-apps { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 #an-article .an-app-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
 #an-article .an-app-today { color: var(--text-primary); font-weight: 600; }
@@ -449,6 +465,13 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 .hold-stats { min-width: 0; color: var(--text-secondary); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .hold-heat { color: var(--hot); font-weight: 600; font-size: 12px; }
 .hold-advice { color: var(--text-secondary); font-size: 12px; }
+.hold-live { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.hold-live b { color: var(--text-primary); font-weight: 650; }
+.hold-live .up { color: var(--hot); }      /* 台股慣例：漲紅跌綠 */
+.hold-live .dn { color: var(--good); }
+.hold-alert { font-size: 12px; line-height: 1.5; border-radius: 6px; padding: 2px 8px; }
+.hold-alert.add { color: var(--good); background: var(--good-wash); }
+.hold-alert.reduce { color: var(--hot); background: var(--hot-wash); }
 .hold-del {
   align-self: center; cursor: pointer; border: none;
   background: var(--mid); color: var(--text-muted); border-radius: 6px;
@@ -746,13 +769,13 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 /* 圖表 */
 .section-title { font-size: 13px; font-weight: 650; color: var(--text-secondary); letter-spacing: 0.04em; margin: 28px 0 12px; }
 #range-row { display: flex; gap: 6px; margin: 0 0 12px; flex-wrap: wrap; }
-#range-row button, #ind-select {
+#range-row button, .wl-range button, #ind-select {
   font: inherit; font-size: 13px;
   background: var(--surface-1); color: var(--text-secondary);
   border: 1px solid var(--border); border-radius: 8px; padding: 5px 13px; cursor: pointer;
   box-shadow: var(--shadow); transition: color .12s, border-color .12s;
 }
-#range-row button:hover { color: var(--text-primary); }
+#range-row button:hover, .wl-range button:hover { color: var(--text-primary); }
 /* 回饋在按下瞬間，不等 release（Apple §1）；transform 走 compositor */
 #range-row button, #wl-form button, #hold-form button, .hold-del {
   transition: transform 120ms ease-out;
@@ -760,7 +783,11 @@ h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
 #range-row button:active, #wl-form button:active, #hold-form button:active, .hold-del:active {
   transform: scale(0.96);
 }
-#range-row button[aria-pressed="true"] { color: var(--accent); font-weight: 650; border-color: var(--accent); }
+#range-row button[aria-pressed="true"], .wl-range button[aria-pressed="true"] { color: var(--accent); font-weight: 650; border-color: var(--accent); }
+.wl-range button { font-size: 12px; padding: 3px 10px; }
+.wl-range .wl-score-legend { margin-left: auto; display: flex; gap: 12px; flex-wrap: wrap; color: var(--text-secondary); }
+.wl-score-legend i { display: inline-block; width: 12px; height: 2px; border-radius: 1px; vertical-align: middle; margin-right: 4px; background: var(--accent); }
+.wl-score-legend i.bar { width: 4px; height: 10px; margin-right: 2px; opacity: 0.45; }
 .chart-card { margin-bottom: 16px; }
 .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .chart-title { font-size: 14px; font-weight: 650; }
@@ -948,11 +975,18 @@ footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-heigh
     <span><i style="background:var(--hot)"></i>掛零</span>
     <span><i style="background:var(--good);border-radius:50%"></i><i style="background:#e8a13c;border-radius:50%"></i><i style="background:var(--hot);border-radius:50%"></i>格底圓點＝每條當日燈號（綠正常／黃注意／紅警戒）</span>
   </div>
-  <div class="wl-list-title">燈號分數走勢（🟢 +1／🟡 −1／🔴 −2 加總；0 以上＝健康）</div>
+  <div class="wl-list-title">名單溫度走勢（每日給分：觀察 ≥5 檔 +2／1–4 檔 +1／只剩稍微觀察 −1／掛零 −2）</div>
   <div class="wl-range" id="wl-score-range">
     <input type="date" id="wl-score-from" aria-label="開始日期">
     <span>～</span>
     <input type="date" id="wl-score-to" aria-label="結束日期">
+    <button type="button" data-ma="3" aria-pressed="false">3 日均</button>
+    <button type="button" data-ma="5" aria-pressed="true">5 日均</button>
+    <span class="wl-score-legend">
+      <span><i></i>近況（3／5 日均）</span>
+      <span><i style="background:var(--series-2)"></i>背景（20 日均）</span>
+      <span><i class="bar" style="background:var(--good)"></i><i class="bar" style="background:var(--hot)"></i> 當日給分</span>
+    </span>
   </div>
   <div class="chart-box" id="wl-score-chart"></div>
   <div class="wl-list-title">名單（自起始日起 90 個交易日）</div>
@@ -1595,6 +1629,46 @@ function renderHoldings(data) {
     row.append(identity, details, del);
     list.appendChild(row);
   }
+  applyLive(LIVE);
+}
+// 盤中即時價與當日加減碼提醒：chipwatch/live.py 每 30 秒寫 data/live.json
+let LIVE = null;
+function applyLive(live) {
+  for (const old of document.querySelectorAll("#hold-list .hold-live-row")) old.remove();
+  if (!live || !live.items) return;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  for (const row of document.querySelectorAll("#hold-list .hold-row")) {
+    const item = live.items[row.dataset.code];
+    if (!item || item.date !== today) continue;
+    const details = row.querySelector(".hold-details");
+    const mk = (cls, text) => { const e = document.createElement("span"); e.className = cls; e.textContent = text; return e; };
+    const line = document.createElement("div");
+    line.className = "hold-info-row hold-live-row";
+    const price = mk("hold-live", live.open ? "即時 " : "收盤 ");
+    const b = document.createElement("b");
+    b.textContent = item.price.toLocaleString();
+    price.appendChild(b);
+    if (item.prev) {
+      const chg = (item.price / item.prev - 1) * 100;
+      price.appendChild(mk(chg > 0 ? "up" : chg < 0 ? "dn" : "", `（${chg > 0 ? "+" : ""}${chg.toFixed(1)}%）`));
+    }
+    price.appendChild(document.createTextNode((item.time || "").slice(0, 5)));
+    line.appendChild(price);
+    details.prepend(line);
+    for (const a of item.alerts || []) {
+      const alertRow = document.createElement("div");
+      alertRow.className = "hold-info-row hold-live-row";
+      alertRow.appendChild(mk("hold-alert " + a.kind, `${a.time} ${a.kind === "add" ? "加碼" : "減碼"}提醒｜${a.text}`));
+      line.after(alertRow);
+    }
+  }
+}
+function pollLive() {
+  fetch("data/live.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null).then(live => {
+    LIVE = live;
+    applyLive(LIVE);
+  });
 }
 
 function initHoldForm() {
@@ -1791,7 +1865,7 @@ function renderWatchlist(data) {
     wrap.appendChild(grid);
   }
 
-  // 燈號分數走勢：每日燈號加總（🟢+1/🟡−1/🔴−2），起訖日期自選，hover 顯示當日燈號明細
+  // 名單溫度走勢：每日給分（watchlist.day_points）的近況／背景平均，起訖日期自選，hover 顯示當日燈號明細
   if (data.scores && data.scores.length > 1) {
     const first = data.scores[0][0], last = data.scores[data.scores.length - 1][0];
     const fromEl = el("wl-score-from"), toEl = el("wl-score-to");
@@ -1809,23 +1883,38 @@ function renderWatchlist(data) {
       const iso = d.toISOString().slice(0, 10);
       fromEl.value = iso < first ? first : iso;
     }
+    // 藍線＝近況（近 3／5 日均）、橘線＝背景（近 20 日均）、柱＝當日給分（綠正／紅負）
+    const maButtons = [...document.querySelectorAll("#wl-score-range button[data-ma]")];
+    let scoreMa = 5;
+    try { scoreMa = Number(localStorage.getItem("wl-score-ma")) || 5; } catch { /* 略過 */ }
+    const signed = v => (v > 0 ? "+" : "") + v;
     const draw = () => {
+      for (const b of maButtons) b.setAttribute("aria-pressed", String(Number(b.dataset.ma) === scoreMa));
       const lo = fromEl.value || first, hi = toEl.value || last;
-      const rows = data.scores.filter(s => s[0] >= lo && s[0] <= hi);
+      const points = data.scores.map(s => s[1]);
+      const recent = trailingMean(points, scoreMa), background = trailingMean(points, 20);
+      const rows = data.scores.map((s, i) => [s[0], recent[i], s[1], s[2], background[i]]).filter(r => r[0] >= lo && r[0] <= hi);
       if (rows.length < 2) return;
-      renderLineChart(el("wl-score-chart"), rows.map(s => [s[0], s[1]]), {
+      renderLineChart(el("wl-score-chart"), rows.map(r => [r[0], r[1]]), {
         color: "var(--accent)",
-        smooth: true,
-        yMin: -7, yMax: 3,
-        bands: [
-          { from: 0, to: 3, fill: "var(--good-wash)" },
-          { from: -7, to: 0, fill: "var(--hot-wash)" },
-        ],
-        tickFmt: v => Math.round(v),
-        valueFmt: v => (v > 0 ? "+" : "") + v + " 分",
-        extraFmt: idx => (rows[idx][2] || []).join("\n"),
+        yMin: -2, yMax: 2, ticks: [-2, -1, 0, 1, 2],
+        bars: rows.map(r => r[2]),
+        second: { values: rows.map(r => r[4]), color: "var(--series-2)" },
+        // 背景線落到 −0.5 以下是極冷：五年回測這之後 20 日加權平均 +6%，不是警戒
+        bands: [{ from: -2, to: -0.5, fill: "var(--cold-wash)", label: "極冷區（背景線落入後，過去之後 20 日多數上漲）" }],
+        endLabel: signed(rows[rows.length - 1][1].toFixed(1)),
+        tickFmt: signed,
+        valueFmt: v => `近況 ${signed(v.toFixed(1))}`,
+        extraFmt: idx => [`背景 ${signed(rows[idx][4].toFixed(1))}｜當日給分 ${signed(rows[idx][2])}`, ...(rows[idx][3] || [])].join("\n"),
       });
     };
+    for (const b of maButtons) {
+      b.onclick = () => {
+        scoreMa = Number(b.dataset.ma);
+        try { localStorage.setItem("wl-score-ma", scoreMa); } catch { /* 略過 */ }
+        draw();
+      };
+    }
     fromEl.onchange = draw;  // 用指派而非 addEventListener：重渲染時覆蓋、不殘留舊閉包
     toEl.onchange = draw;
     draw();
@@ -2301,15 +2390,18 @@ async function loadArticle(d, remember, focusCode) {
   if (remember) { try { localStorage.setItem("analysis-date", d); } catch { /* 略過 */ } }
   renderArticle(art);
   if (focusCode) {
-    const target = el("an-stock-" + focusCode);
-    if (target) {
-      scrollBelowHeader(target);
-      target.classList.add("an-focus");
-      setTimeout(() => target.classList.remove("an-focus"), 1600);
-    } else {
-      el("an-article").scrollIntoView({ block: "start" });
-    }
+    if (!openStock(focusCode)) el("an-article").scrollIntoView({ block: "start" });
   }
+}
+// 展開某檔的分析並捲到它；找不到回傳 false
+function openStock(code) {
+  const target = el("an-stock-" + code);
+  if (!target) return false;
+  target.open = true;
+  scrollBelowHeader(target);
+  target.classList.add("an-focus");
+  setTimeout(() => target.classList.remove("an-focus"), 1600);
+  return true;
 }
 function renderArticle(art) {
   const box = el("an-article");
@@ -2333,14 +2425,41 @@ function renderArticle(art) {
   if (mk.slight.length) market.appendChild(h("div", "an-list", "稍微觀察：" + mk.slight.join("、")));
   if ((mk.playbook || []).length) { market.appendChild(h("h4", null, "市場做法")); market.appendChild(ul(mk.playbook)); }
   market.appendChild(h("div", "an-list", mk.summary));
+  if ((mk.missing || []).length) market.appendChild(h("div", "an-list", "沒有足夠日線、未分析：" + mk.missing.join("、")));
   box.appendChild(market);
 
+  // 今日分析的所有個股：點名稱 → 展開該檔並跳過去（舊文章沒有 kinds，視為盯盤名單）
+  const kindsOf = s => s.kinds || ["pick"];
+  const KIND_LABEL = { pick: "盯盤", watch: "觀察", slight: "稍微觀察" };
+  const index = h("div", "an-index");
+  for (const [kind, label] of [["pick", "盯盤名單"], ["watch", "今日觀察"], ["slight", "今日稍微觀察"]]) {
+    const group = art.sections.filter(s => kindsOf(s).includes(kind));
+    if (!group.length) continue;
+    const row = h("div", "v");
+    for (const s of group) {
+      const b = h("button", (s.fail || []).length ? "fail" : null, (kind === "pick" ? `#${s.rank} ` : "") + `${s.code} ${s.name}`);
+      b.type = "button";
+      if ((s.fail || []).length) b.title = "未通過右側門檻：" + s.fail.join("、");
+      b.addEventListener("click", () => openStock(s.code));
+      row.appendChild(b);
+    }
+    index.append(h("div", "k", `${label}（${group.length}）`), row);
+  }
+  box.appendChild(index);
+
   for (const s of art.sections) {
-    const sec = h("section", "an-stock");
+    const sec = h("details", "an-stock");
     sec.id = "an-stock-" + s.code;
+    const m = s.metrics, sg = v => (v > 0 ? "+" : "") + v;
     const title = h("h3");
-    title.append(h("span", "rank", `#${s.rank}`), h("span", null, `${s.code} ${s.name}`), h("span", "grp", s.group));
-    sec.appendChild(title);
+    if (s.rank) title.appendChild(h("span", "rank", `#${s.rank}`));
+    title.append(h("span", null, `${s.code} ${s.name}`), h("span", "grp", s.group));
+    for (const k of kindsOf(s)) title.appendChild(h("span", "tag", KIND_LABEL[k]));
+    title.appendChild(h("span", "brief", `收盤 ${m.close}・20日乖離 ${sg(m.bias20)}%`));
+    const summary = h("summary");
+    summary.appendChild(title);
+    sec.appendChild(summary);
+    if ((s.fail || []).length) sec.appendChild(h("div", "an-fail", "未通過右側門檻：" + s.fail.join("、")));
     // 入選日期：那天有文章且分析到這檔 → 連結到該日該檔段落
     const apps = h("div", "an-apps");
     apps.appendChild(document.createTextNode("入選："));
@@ -2361,7 +2480,6 @@ function renderArticle(art) {
     }
     apps.appendChild(document.createTextNode("（w＝觀察、s＝稍微觀察；有底線＝該日文章也分析了這檔，點擊跳過去）"));
     sec.appendChild(apps);
-    const m = s.metrics, sg = v => (v > 0 ? "+" : "") + v;
     const met = h("div", "an-metrics");
     met.innerHTML = `<span>收盤 <b>${m.close}</b></span><span>5/20/60MA <b>${m.ma5}/${m.ma20}/${m.ma60}</b></span>` +
       `<span>${m.stage}</span><span>20日乖離 <b>${sg(m.bias20)}%</b></span><span>距52週高 <b>${sg(m.to_high)}%</b></span>` +
@@ -2371,6 +2489,7 @@ function renderArticle(art) {
     const fig = h("div"); fig.innerHTML = s.svg; sec.appendChild(fig);
     const plans = h("div", "an-plans");
     for (const [label, items] of [["進場時機", s.entry], ["出場／停損", s.exit], ["加碼條件", s.add]]) {
+      if (!items.length) continue;
       const d = h("div"); d.appendChild(h("h4", null, label)); d.appendChild(ul(items)); plans.appendChild(d);
     }
     sec.appendChild(plans);
@@ -2961,6 +3080,13 @@ async function initWatchlistForm() {
 }
 
 /* ---------- 折線圖（手寫 SVG＋十字線 tooltip） ---------- */
+// 近 n 筆的平均（前 n−1 筆用現有筆數）
+function trailingMean(values, n) {
+  return values.map((_, i) => {
+    const w = values.slice(Math.max(0, i - n + 1), i + 1);
+    return w.reduce((a, b) => a + b, 0) / w.length;
+  });
+}
 function renderLineChart(container, points, opts) {
   container.textContent = "";
   if (!points || points.length < 2) {
@@ -2979,15 +3105,16 @@ function renderLineChart(container, points, opts) {
   const X = i => m.l + (i / (points.length - 1)) * iw;
   const Y = v => m.t + (1 - (v - yMin) / (yMax - yMin)) * ih;
 
-  let bands = "";
+  let bands = "", bandLabels = "";
   for (const b of opts.bands || []) {
     bands += `<rect x="${m.l}" y="${Y(b.to)}" width="${iw}" height="${Y(b.from) - Y(b.to)}" fill="${b.fill}"/>`;
+    if (b.label) bandLabels += `<text x="${m.l + 8}" y="${Y(b.from) - 8}" font-size="11" fill="var(--text-muted)">${b.label}</text>`;
   }
 
   const nTicks = 4;
+  const ticks = opts.ticks || Array.from({ length: nTicks + 1 }, (_, i) => yMin + ((yMax - yMin) * i) / nTicks);
   let grid = "", yLabels = "";
-  for (let i = 0; i <= nTicks; i++) {
-    const v = yMin + ((yMax - yMin) * i) / nTicks;
+  for (const v of ticks) {
     const y = Y(v);
     grid += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
     yLabels += `<text x="${m.l - 8}" y="${y + 3.5}" text-anchor="end" font-size="11"
@@ -2997,7 +3124,21 @@ function renderLineChart(container, points, opts) {
   const nx = Math.min(6, points.length);
   for (let i = 0; i < nx; i++) {
     const idx = Math.round((i / (nx - 1)) * (points.length - 1));
-    xLabels += `<text x="${X(idx)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${points[idx][0].slice(2)}</text>`;
+    const anchor = i === 0 ? "start" : i === nx - 1 ? "end" : "middle";  // 兩端靠邊對齊，不被圖框切掉
+    xLabels += `<text x="${X(idx)}" y="${H - 8}" text-anchor="${anchor}" font-size="11" fill="var(--text-muted)">${points[idx][0].slice(2)}</text>`;
+  }
+
+  // 柱（opts.bars）：每點一根自 0 起算的細柱，綠 ≥0／紅 <0，作為線的背景脈絡
+  let bars = "";
+  if (opts.bars) {
+    const bw = Math.max(1, Math.min(8, (iw / (points.length - 1)) * 0.6));
+    opts.bars.forEach((v, i) => {
+      if (!v) return;
+      const x = Math.min(Math.max(X(i) - bw / 2, m.l), m.l + iw - bw);
+      bars += `<rect x="${x.toFixed(1)}" y="${Math.min(Y(0), Y(v)).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.abs(Y(v) - Y(0)).toFixed(1)}"
+        fill="var(--${v > 0 ? "good" : "hot"})" opacity="0.3" rx="1"/>`;
+    });
+    bars += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--baseline)" stroke-width="1"/>`;
   }
 
   let path;
@@ -3022,14 +3163,22 @@ function renderLineChart(container, points, opts) {
     path = points.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
   }
   const last = points[points.length - 1];
+  // 第二條線（opts.second）：同一 Y 軸的對照序列，畫在主線下方
+  const second = opts.second ? `<path d="${opts.second.values.map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("")}"
+    fill="none" stroke="${opts.second.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` : "";
 
   const svgNS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgNS, "svg");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  svg.innerHTML = `${bands}${grid}${yLabels}${xLabels}
+  const lastY = Y(last[1]);
+  const endLabel = opts.endLabel == null ? "" : `<text x="${X(points.length - 1) - 8}" y="${lastY < m.t + 24 ? lastY + 18 : lastY - 10}"
+    text-anchor="end" font-size="12" font-weight="650" fill="var(--text-primary)" stroke="var(--surface-1)" stroke-width="3"
+    paint-order="stroke" font-variant-numeric="tabular-nums">${opts.endLabel}</text>`;
+  svg.innerHTML = `${bands}${grid}${bars}${bandLabels}${yLabels}${xLabels}
     <line x1="${m.l}" x2="${W - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="var(--baseline)" stroke-width="1"/>
+    ${second}
     <path d="${path}" fill="none" stroke="${opts.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${X(points.length - 1)}" cy="${Y(last[1])}" r="4.5" fill="${opts.color}" stroke="var(--surface-1)" stroke-width="2"/>
+    <circle cx="${X(points.length - 1)}" cy="${lastY}" r="4.5" fill="${opts.color}" stroke="var(--surface-1)" stroke-width="2"/>${endLabel}
     <line id="xhair" y1="${m.t}" y2="${m.t + ih}" stroke="var(--baseline)" stroke-width="1" visibility="hidden"/>
     <circle id="xdot" r="4.5" fill="${opts.color}" stroke="var(--surface-1)" stroke-width="2" visibility="hidden"/>
     <rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/>`;
@@ -3301,7 +3450,10 @@ async function init() {
     if (m && m.M) renderModeCard(m);
     // 持股清單（個人資料，gitignored；公開站無此檔自動隱藏）
     fetch("data/holdings.json").then(r => r.ok ? r.json() : null).catch(() => null).then(h => {
-      if (h && h.items && h.items.length) renderHoldings(h);
+      if (!(h && h.items && h.items.length)) return;
+      renderHoldings(h);
+      pollLive();                      // 有持股（本機）才輪詢即時價；公開站沒有 live.json
+      setInterval(pollLive, 30000);
     });
   });
 

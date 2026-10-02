@@ -381,3 +381,47 @@ def test_failure_point_dash_style_applies_to_the_line_not_its_label():
 
     assert "stroke-dasharray" in _rule(source, ".kchart line.anchor")
     assert ".kchart .anchor {" not in source   # 會連標籤 <text class="lbl anchor"> 一起描上虛線外框
+
+
+def test_list_temperature_chart_shows_recent_and_background_averages_of_daily_points():
+    source = HTML.read_text()
+    body = _body()
+    block = source[source.index("// 名單溫度走勢"):source.index("// 個股頻率標色")]
+
+    assert "觀察 ≥5 檔 +2／1–4 檔 +1／只剩稍微觀察 −1／掛零 −2" in body and "0 以上＝健康" not in body
+    assert re.findall(r'<button type="button" data-ma="(\d)"', body) == ["3", "5"]   # 近況的平滑天數可切換
+    assert "trailingMean(points, scoreMa)" in block and "trailingMean(points, 20)" in block   # 近況＋背景，用完整序列算
+    assert "second:" in block and "var(--series-2)" in block               # 背景線用第二個系列色
+    assert "bars:" in block and "ticks: [-2, -1, 0, 1, 2]" in block        # 柱＝當日給分
+    assert "from: -2, to: -0.5" in block and "極冷" in block               # 極冷區標示，不叫警戒
+    assert '"wl-score-ma"' in block
+
+
+def test_each_stock_analysis_is_collapsed_and_reachable_from_a_clickable_index_on_top():
+    source = HTML.read_text()
+    render = source[source.index("function renderArticle("):source.index("function initAnalysis(")]
+    load = source[source.index("async function loadArticle("):source.index("function renderArticle(")]
+
+    assert 'h("details", "an-stock")' in render and ".open = true" not in render   # 每檔預設摺疊
+    assert "an-index" in render and "盯盤名單" in render and "今日觀察" in render and "今日稍微觀察" in render
+    assert "openStock(s.code)" in render                                            # 點清單 → 展開並跳到該檔
+    assert "function openStock(" in source and "openStock(focusCode)" in load       # 入選日期連結也會展開
+    assert "list-style: none" in _rule(source, "#an-article .an-stock > summary")
+
+
+def test_add_conditions_block_is_left_out_when_the_analysis_has_nothing_to_say():
+    source = HTML.read_text()
+    render = source[source.index("function renderArticle("):source.index("function initAnalysis(")]
+
+    assert '["加碼條件", s.add]' in render and "if (!items.length) continue;" in render
+
+
+def test_holdings_show_live_prices_and_todays_alerts_refreshed_every_30_seconds():
+    source = HTML.read_text()
+    live = source[source.index("function applyLive("):source.index("function initHoldForm(")]
+
+    assert 'fetch("data/live.json", { cache: "no-store" })' in live and "setInterval(pollLive, 30000)" in source
+    assert "hold-live" in live and "hold-alert" in live
+    assert "item.date !== today" in live                       # 不是今天的報價不顯示
+    assert "applyLive(LIVE)" in source[source.index("function renderHoldings("):source.index("function applyLive(")]   # 重畫持股列後補回
+    assert "var(--good)" in _rule(source, ".hold-alert.add") and "var(--hot)" in _rule(source, ".hold-alert.reduce")
