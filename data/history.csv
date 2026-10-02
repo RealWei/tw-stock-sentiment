@@ -2610,6 +2610,7 @@ date,indicator,value
 2026-09-29,margin_balance,618653344.0
 2026-09-30,margin_balance,622252453.0
 2026-10-01,margin_balance,629867193.0
+2026-10-02,margin_balance,635104422.0
 2024-07-08,pc_oi_ratio,122.12
 2024-07-09,pc_oi_ratio,109.03
 2024-07-10,pc_oi_ratio,108.18
@@ -3301,6 +3302,7 @@ date,indicator,value
 2026-09-29,pe,17.14
 2026-09-30,pe,17.35
 2026-10-01,pe,17.43
+2026-10-02,pe,17.41
 2023-07-03,taiex_close,17084.2
 2023-07-04,taiex_close,17140.77
 2023-07-05,taiex_close,17056.43
@@ -7196,7 +7198,7 @@ date,indicator,value
 2026-09-29,taiex_volume,836144707733.0
 2026-09-30,taiex_volume,921492702613.0
 2026-10-01,taiex_volume,874046252416.0
-2026-10-02,taiex_volume,933185030626.0
+2026-10-02,taiex_volume,938222196327.0
 2024-07-08,tpex_close,278.77
 2024-07-09,tpex_close,278.06
 2024-07-10,tpex_close,279.95
@@ -8347,6 +8349,7 @@ date,indicator,value
 2026-09-29,tpex_high,414.95
 2026-09-30,tpex_high,419.03
 2026-10-01,tpex_high,421.21
+2026-10-02,tpex_high,426.93
 2024-07-08,tpex_limit_down,5.0
 2024-07-09,tpex_limit_down,7.0
 2024-07-10,tpex_limit_down,2.0
@@ -9499,6 +9502,7 @@ date,indicator,value
 2026-09-29,tpex_low,410.45
 2026-09-30,tpex_low,414.21
 2026-10-01,tpex_low,417.09
+2026-10-02,tpex_low,419.94
 2026-07-01,tpex_open,430.29
 2026-07-02,tpex_open,429.41
 2026-07-03,tpex_open,438.16
@@ -9563,6 +9567,7 @@ date,indicator,value
 2026-09-29,tpex_open,412.56
 2026-09-30,tpex_open,414.21
 2026-10-01,tpex_open,417.48
+2026-10-02,tpex_open,419.94
 2024-07-08,tpex_up,285.0
 2024-07-09,tpex_up,196.0
 2024-07-10,tpex_up,465.0
